@@ -1,0 +1,240 @@
+<Window x:Class="FastImageViewer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:FastImageViewer.Models"
+        Title="FastImageViewer"
+        Width="1280"
+        Height="800"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        WindowState="Maximized"
+        Background="#000000"
+        AllowDrop="True"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        Drop="Window_Drop"
+        DragOver="Window_DragOver">
+
+    <Window.Resources>
+        <!-- Thumbnail Item Style in Overview -->
+        <Style x:Key="ThumbnailListBoxItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="Margin" Value="6" />
+            <Setter Property="Background" Value="{StaticResource CardBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <EventSetter Event="MouseDoubleClick" Handler="ThumbnailItem_MouseDoubleClick" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="CardBorder"
+                                Width="210"
+                                Height="195"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="CardBorder" Property="Background" Value="{StaticResource CardHoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="CardBorder" Property="Background" Value="#2D3748" />
+                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <!-- ==================== 1. PURE FULLSCREEN VIEW ==================== -->
+        <Grid x:Name="FullscreenViewGrid"
+              Background="#000000"
+              Visibility="Visible"
+              MouseLeftButtonDown="FullscreenViewGrid_MouseLeftButtonDown"
+              MouseWheel="FullscreenViewGrid_MouseWheel">
+            <Image x:Name="FullscreenImage"
+                   Stretch="Uniform"
+                   StretchDirection="DownOnly"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   RenderOptions.BitmapScalingMode="HighQuality"
+                   SnapsToDevicePixels="True"
+                   UseLayoutRounding="True" />
+        </Grid>
+
+        <!-- ==================== 2. OVERVIEW (THUMBNAIL GRID) ==================== -->
+        <Grid x:Name="OverviewGrid"
+              Background="{StaticResource AppBackgroundBrush}"
+              Visibility="Collapsed">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="48" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="30" />
+            </Grid.RowDefinitions>
+
+            <!-- Top Bar -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource PanelBackgroundBrush}"
+                    BorderBrush="#2D2D30"
+                    BorderThickness="0,0,0,1"
+                    Padding="16,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0"
+                               Text="FastImageViewer"
+                               Foreground="{StaticResource AccentBrush}"
+                               FontWeight="SemiBold"
+                               FontSize="14"
+                               VerticalAlignment="Center"
+                               Margin="0,0,16,0" />
+
+                    <TextBlock x:Name="FolderPathText"
+                               Grid.Column="1"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               FontSize="13"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" />
+
+                    <Button Grid.Column="2"
+                            Content="Otevřít obrázek / složku (O)"
+                            Click="OpenFileButton_Click"
+                            Background="#2D2D30"
+                            Foreground="{StaticResource TextPrimaryBrush}"
+                            BorderBrush="#3E3E42"
+                            BorderThickness="1"
+                            Padding="12,5"
+                            Margin="12,0"
+                            Cursor="Hand"
+                            VerticalAlignment="Center" />
+
+                    <Button Grid.Column="3"
+                            Content="✕"
+                            ToolTip="Ukončit (Esc)"
+                            Click="CloseButton_Click"
+                            Background="Transparent"
+                            Foreground="{StaticResource TextSecondaryBrush}"
+                            BorderThickness="0"
+                            FontSize="15"
+                            Width="32"
+                            Height="32"
+                            Cursor="Hand"
+                            VerticalAlignment="Center" />
+                </Grid>
+            </Border>
+
+            <!-- Thumbnail Grid -->
+            <ListBox x:Name="ThumbnailListBox"
+                     Grid.Row="1"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     Padding="12"
+                     SelectionMode="Single"
+                     ItemContainerStyle="{StaticResource ThumbnailListBoxItemStyle}"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.CanContentScroll="False"
+                     SelectionChanged="ThumbnailListBox_SelectionChanged">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel IsItemsHost="True" Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:ImageItem}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="26" />
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0"
+                                    Background="#18181A"
+                                    CornerRadius="4"
+                                    ClipToBounds="True">
+                                <Image Source="{Binding Thumbnail}"
+                                       Stretch="Uniform"
+                                       StretchDirection="DownOnly"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       RenderOptions.BitmapScalingMode="HighQuality" />
+                            </Border>
+
+                            <TextBlock Grid.Row="1"
+                                       Text="{Binding FileName}"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       FontSize="12"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Bottom"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding FileName}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <!-- Empty State Panel -->
+            <StackPanel x:Name="EmptyStatePanel"
+                        Grid.Row="1"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Visibility="Collapsed">
+                <TextBlock Text="Ve vybrané složce nejsou žádné podporované obrázky (JPG, PNG, WEBP, GIF)."
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="15"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,16" />
+                <Button Content="Vybrat obrázek ze souboru (O)"
+                        Click="OpenFileButton_Click"
+                        Background="{StaticResource AccentBrush}"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Padding="18,9"
+                        FontSize="13"
+                        FontWeight="SemiBold"
+                        HorizontalAlignment="Center"
+                        Cursor="Hand" />
+            </StackPanel>
+
+            <!-- Bottom Status Bar in Overview -->
+            <Border Grid.Row="2"
+                    Background="{StaticResource PanelBackgroundBrush}"
+                    BorderBrush="#2D2D30"
+                    BorderThickness="0,1,0,0"
+                    Padding="16,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock x:Name="StatusCounterText"
+                               Grid.Column="0"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="12"
+                               VerticalAlignment="Center" />
+
+                    <TextBlock Grid.Column="1"
+                               Text="Enter / Dvojklik: Fullscreen   •   Šipky / Mezerník: Navigace   •   O: Otevřít   •   Esc: Konec"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="12"
+                               VerticalAlignment="Center" />
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
