@@ -7,6 +7,7 @@ public sealed class AppSettings
 {
     public string? LastFolderPath { get; set; }
     public string? LastCopyTargetFolder { get; set; }
+    public bool MouseWheelZoom { get; set; } = false;
 }
 
 public static class AppSettingsService

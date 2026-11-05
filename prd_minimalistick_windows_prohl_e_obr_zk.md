@@ -35,7 +35,11 @@ Vytvořit extrémně rychlý, lehký a nativní desktopový prohlížeč obrázk
 * **Zoom a ovládání ve Fullscreenu:**
   * **Výchozí zobrazení:** *Fit to Window* (zmenšení velkých obrázků na velikost obrazovky se zachováním poměru stran; menší obrázky v 1:1 nebo dle nastavení).
   * **FastStone Lupa (100 % náhled):** Stisk a držení **levého tlačítka myši** (ve výchozím zobrazení) okamžitě přepne obrázek na 100 % (1:1) v místě kurzoru a tažením myši umožňuje plynulý posun (pan). Po uvolnění tlačítka se obraz vrátí zpět na *Fit to Window*.
-  * **Plynulý zoom:** Kolečko myši (zoom přímo na pozici kurzoru) a klávesy `+` / `-`. Při přiblížení lze obraz posouvat tažením myší.
+  * **Kolečko myši (přepínatelné, výchozí = listování fotkami):**
+    * Ve výchozím režimu kolečko myši plynule listuje mezi předchozím a dalším snímkem (stejně jako ve FastStone).
+    * Podržení `Ctrl + kolečko myši` vždy provádí plynulý zoom přímo na pozici kurzoru.
+    * Klávesou `M` (nebo tlačítkem v horní liště Overview) lze chování kolečka trvale přepnout mezi režimem **Listování fotkami** a **Zoom na kurzor**.
+  * **Plynulý zoom:** Klávesy `+` / `-` (a `Ctrl + kolečko`). Při přiblížení lze obraz posouvat tažením myší.
   * **Rychlé měřítko:** Klávesa `*` (na numerické klávesnici i horní řadě) pro okamžitý přepínač / návrat na **100 % (1:1)** velikost (opětovný stisk nebo klávesa `/` vrátí na *Fit to Window*).
 * **Kopírování souboru (`C`):**
   * Stisk klávesy `C` ve Fullscreenu (i v Overview) vyvolá lehký modální dialog s předvyplněnou poslední použitou cílovou složkou (s možností změny přes Procházet / psaním cesty) a okamžitým potvrzením klávesou `Enter`.

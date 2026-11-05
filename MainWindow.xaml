@@ -11,6 +11,7 @@
         Background="#000000"
         AllowDrop="True"
         PreviewKeyDown="Window_PreviewKeyDown"
+        PreviewTextInput="Window_PreviewTextInput"
         Drop="Window_Drop"
         DragOver="Window_DragOver">
 
@@ -59,16 +60,31 @@
         <Grid x:Name="FullscreenViewGrid"
               Background="#000000"
               Visibility="Visible"
+              ClipToBounds="True"
+              SizeChanged="FullscreenViewGrid_SizeChanged"
               MouseLeftButtonDown="FullscreenViewGrid_MouseLeftButtonDown"
+              MouseLeftButtonUp="FullscreenViewGrid_MouseLeftButtonUp"
+              MouseMove="FullscreenViewGrid_MouseMove"
               MouseWheel="FullscreenViewGrid_MouseWheel">
-            <Image x:Name="FullscreenImage"
-                   Stretch="Uniform"
-                   StretchDirection="DownOnly"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   RenderOptions.BitmapScalingMode="HighQuality"
-                   SnapsToDevicePixels="True"
-                   UseLayoutRounding="True" />
+
+            <Canvas x:Name="ImageViewportCanvas"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    ClipToBounds="True">
+                <Image x:Name="FullscreenImage"
+                       Stretch="Fill"
+                       RenderTransformOrigin="0,0"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       SnapsToDevicePixels="True"
+                       UseLayoutRounding="True">
+                    <Image.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform x:Name="ImageScaleTransform" ScaleX="1" ScaleY="1" />
+                            <TranslateTransform x:Name="ImageTranslateTransform" X="0" Y="0" />
+                        </TransformGroup>
+                    </Image.RenderTransform>
+                </Image>
+            </Canvas>
         </Grid>
 
         <!-- ==================== 2. OVERVIEW (THUMBNAIL GRID) ==================== -->
@@ -93,6 +109,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0"
@@ -110,7 +127,21 @@
                                VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis" />
 
-                    <Button Grid.Column="2"
+                    <Button x:Name="WheelModeButton"
+                            Grid.Column="2"
+                            Content="Kolečko: Listování (M)"
+                            ToolTip="Přepnout chování kolečka myši ve Fullscreenu: Listování mezi fotkami vs. Zoom (zkratka M; Ctrl+Kolečko vždy zoomuje)"
+                            Click="WheelModeButton_Click"
+                            Background="#2D2D30"
+                            Foreground="{StaticResource TextPrimaryBrush}"
+                            BorderBrush="#3E3E42"
+                            BorderThickness="1"
+                            Padding="12,5"
+                            Margin="12,0,0,0"
+                            Cursor="Hand"
+                            VerticalAlignment="Center" />
+
+                    <Button Grid.Column="3"
                             Content="Otevřít obrázek / složku (O)"
                             Click="OpenFileButton_Click"
                             Background="#2D2D30"
@@ -118,11 +149,11 @@
                             BorderBrush="#3E3E42"
                             BorderThickness="1"
                             Padding="12,5"
-                            Margin="12,0"
+                            Margin="8,0,12,0"
                             Cursor="Hand"
                             VerticalAlignment="Center" />
 
-                    <Button Grid.Column="3"
+                    <Button Grid.Column="4"
                             Content="✕"
                             ToolTip="Ukončit (Esc)"
                             Click="CloseButton_Click"
@@ -229,12 +260,29 @@
                                VerticalAlignment="Center" />
 
                     <TextBlock Grid.Column="1"
-                               Text="Enter / Dvojklik: Fullscreen   •   Šipky / Mezerník: Navigace   •   O: Otevřít   •   Esc: Konec"
+                               Text="Enter: Fullscreen  •  Kolečko: Další/Předchozí (Ctrl+Kolečko/+/-: Zoom)  •  M: Režim kolečka  •  *: 100%  •  C: Kopírovat  •  Del: Koš"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="12"
                                VerticalAlignment="Center" />
                 </Grid>
             </Border>
         </Grid>
+
+        <!-- Subtle auto-hiding toast for file actions & mode switches -->
+        <Border x:Name="ToastBorder"
+                Background="#DD1E1E1E"
+                BorderBrush="#3B82F6"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="14,8"
+                Margin="24,24,24,42"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                IsHitTestVisible="False"
+                Visibility="Collapsed">
+            <TextBlock x:Name="ToastText"
+                       Foreground="{StaticResource TextPrimaryBrush}"
+                       FontSize="13" />
+        </Border>
     </Grid>
 </Window>
