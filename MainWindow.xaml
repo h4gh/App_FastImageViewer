@@ -584,13 +584,29 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Column="0"
-                               Text="FastImageViewer"
-                               Foreground="{StaticResource AccentBrush}"
-                               FontWeight="SemiBold"
-                               FontSize="14"
-                               VerticalAlignment="Center"
-                               Margin="0,0,16,0" />
+                    <StackPanel Grid.Column="0"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Margin="0,0,16,0">
+                        <TextBlock Text="FastImageViewer"
+                                   Foreground="{StaticResource AccentBrush}"
+                                   FontWeight="SemiBold"
+                                   FontSize="14"
+                                   VerticalAlignment="Center" />
+                        <Border Background="#25252B"
+                                BorderBrush="#3E3E42"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="5,1"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center">
+                            <TextBlock x:Name="AppVersionText"
+                                       Text="v1.0.0"
+                                       Foreground="#9CA3AF"
+                                       FontSize="11"
+                                       FontFamily="Consolas" />
+                        </Border>
+                    </StackPanel>
 
                     <TextBlock x:Name="FolderPathText"
                                Grid.Column="1"

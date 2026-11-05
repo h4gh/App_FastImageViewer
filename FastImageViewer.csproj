@@ -8,6 +8,11 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>FastImageViewer</AssemblyName>
     <RootNamespace>FastImageViewer</RootNamespace>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Product>FastImageViewer</Product>
+    <Description>Minimalistický a bleskový prohlížeč obrázků pro Windows (FastStone Style)</Description>
     <Optimize>true</Optimize>
     <NoWarn>NU1902;NU1903</NoWarn>
   </PropertyGroup>

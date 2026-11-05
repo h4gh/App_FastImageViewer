@@ -1,0 +1,98 @@
+name: Build and Release FastImageViewer
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Windows x64 Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Determine Version from Tag
+        id: vars
+        shell: pwsh
+        run: |
+          $tag = if ("${{ github.event.inputs.tag_name }}") { "${{ github.event.inputs.tag_name }}" } else { "${{ github.ref_name }}" }
+          $ver = $tag.TrimStart('v', 'V')
+          if ($ver -notmatch '^\d+\.\d+\.\d+') { $ver = "1.0.0" }
+          echo "TAG=$tag" >> $env:GITHUB_OUTPUT
+          echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
+          Write-Host "Building Tag: $tag (Version: $ver)"
+
+      - name: Publish 1. Portable Folder Zip (Corporate IT Friendly - No TEMP extraction)
+        shell: pwsh
+        run: |
+          $ver = "${{ steps.vars.outputs.VERSION }}"
+          dotnet publish FastImageViewer.csproj -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=false `
+            -p:DebugType=none `
+            -p:Version=$ver -p:AssemblyVersion="$ver.0" -p:FileVersion="$ver.0" `
+            -o ./dist/FastImageViewer
+          New-Item -ItemType Directory -Force -Path ./artifacts | Out-Null
+          Compress-Archive -Path ./dist/FastImageViewer/* -DestinationPath ./artifacts/FastImageViewer-win-x64-portable.zip -Force
+
+      - name: Publish 2. Standalone Single-File EXE (Self-Contained)
+        shell: pwsh
+        run: |
+          $ver = "${{ steps.vars.outputs.VERSION }}"
+          dotnet publish FastImageViewer.csproj -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:DebugType=none `
+            -p:Version=$ver -p:AssemblyVersion="$ver.0" -p:FileVersion="$ver.0" `
+            -o ./dist/single_full
+          Copy-Item ./dist/single_full/FastImageViewer.exe ./artifacts/FastImageViewer.exe -Force
+
+      - name: Publish 3. Lightweight Single-File EXE (Requires .NET 9 Runtime)
+        shell: pwsh
+        run: |
+          $ver = "${{ steps.vars.outputs.VERSION }}"
+          dotnet publish FastImageViewer.csproj -c Release -r win-x64 --self-contained false `
+            -p:PublishSingleFile=true `
+            -p:DebugType=none `
+            -p:Version=$ver -p:AssemblyVersion="$ver.0" -p:FileVersion="$ver.0" `
+            -o ./dist/single_light
+          Copy-Item ./dist/single_light/FastImageViewer.exe ./artifacts/FastImageViewer_Light_net9.exe -Force
+
+      - name: Generate SHA-256 Checksums
+        shell: pwsh
+        run: |
+          $lines = Get-ChildItem ./artifacts/* | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)"
+          }
+          $lines | Set-Content -Path ./artifacts/SHA256SUMS.txt -Encoding UTF8
+          Get-Content ./artifacts/SHA256SUMS.txt
+
+      - name: Create / Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.TAG }}
+          name: FastImageViewer ${{ steps.vars.outputs.TAG }} (Automated GitHub Actions Build)
+          generate_release_notes: true
+          files: |
+            artifacts/FastImageViewer-win-x64-portable.zip
+            artifacts/FastImageViewer.exe
+            artifacts/FastImageViewer_Light_net9.exe
+            artifacts/SHA256SUMS.txt

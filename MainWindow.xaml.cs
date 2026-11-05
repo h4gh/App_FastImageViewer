@@ -79,6 +79,11 @@ public partial class MainWindow : Window
         FolderTreeView.ItemsSource = _rootFolderNodes;
         _settings = AppSettingsService.Load();
 
+        var asmVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        string versionStr = asmVersion != null ? $"v{asmVersion.Major}.{asmVersion.Minor}.{asmVersion.Build}" : "v1.0.0";
+        AppVersionText.Text = versionStr;
+        Title = $"FastImageViewer {versionStr}";
+
         OverviewLeftColumn.Width = new GridLength(Math.Clamp(_settings.OverviewLeftPaneWidth, 180, 600));
         OverviewPreviewRow.Height = new GridLength(Math.Clamp(_settings.OverviewPreviewPaneHeight, 100, 500));
 
