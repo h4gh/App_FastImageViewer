@@ -53,6 +53,157 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Left Flyout Panel Menu Button Style (FastStone / TeamViewer style) -->
+        <Style x:Key="FlyoutMenuButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#F3F4F6" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Margin" Value="0,1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="{TemplateBinding Content}"
+                                           Foreground="{TemplateBinding Foreground}"
+                                           FontSize="12.5"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{TemplateBinding Tag}"
+                                           Foreground="#9CA3AF"
+                                           FontSize="11.5"
+                                           FontFamily="Consolas"
+                                           VerticalAlignment="Center"
+                                           Margin="8,0,0,0" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#2B3548" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#3B82F6" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Folder TreeViewItem Style -->
+        <Style x:Key="FolderTreeViewItemStyle" TargetType="TreeViewItem">
+            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+            <Setter Property="Foreground" Value="#F3F4F6" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <EventSetter Event="Selected" Handler="FolderTreeViewItem_Selected" />
+            <EventSetter Event="PreviewMouseLeftButtonDown" Handler="FolderTreeViewItem_PreviewMouseLeftButtonDown" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TreeViewItem">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Full-width interactive folder row -->
+                            <Border x:Name="HeaderBorder"
+                                    Grid.Row="0"
+                                    Background="Transparent"
+                                    BorderBrush="Transparent"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="4,3"
+                                    Margin="1,1"
+                                    Cursor="Hand">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <ToggleButton x:Name="Expander"
+                                                  Grid.Column="0"
+                                                  ClickMode="Press"
+                                                  IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                                  Focusable="False"
+                                                  Cursor="Hand"
+                                                  Width="20"
+                                                  Height="20"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="Center">
+                                        <ToggleButton.Template>
+                                            <ControlTemplate TargetType="ToggleButton">
+                                                <Border Background="Transparent" Width="20" Height="20">
+                                                    <TextBlock x:Name="ArrowText"
+                                                               Text="▸"
+                                                               Foreground="#9CA3AF"
+                                                               FontSize="12"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center" />
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsChecked" Value="True">
+                                                        <Setter TargetName="ArrowText" Property="Text" Value="▾" />
+                                                        <Setter TargetName="ArrowText" Property="Foreground" Value="#D1D5DB" />
+                                                    </Trigger>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="ArrowText" Property="Foreground" Value="#60A5FA" />
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </ToggleButton.Template>
+                                    </ToggleButton>
+
+                                    <ContentPresenter x:Name="PART_Header"
+                                                      Grid.Column="1"
+                                                      ContentSource="Header"
+                                                      HorizontalAlignment="Stretch"
+                                                      VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+
+                            <!-- Subfolders container -->
+                            <ItemsPresenter x:Name="ItemsHost"
+                                            Grid.Row="1"
+                                            Margin="16,0,0,0"
+                                            Visibility="Collapsed" />
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="ItemsHost" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <Trigger Property="HasItems" Value="False">
+                                <Setter TargetName="Expander" Property="Visibility" Value="Hidden" />
+                            </Trigger>
+                            <Trigger SourceName="HeaderBorder" Property="IsMouseOver" Value="True">
+                                <Setter TargetName="HeaderBorder" Property="Background" Value="#25252B" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="HeaderBorder" Property="Background" Value="#2B3548" />
+                                <Setter TargetName="HeaderBorder" Property="BorderBrush" Value="#3B82F6" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid>
@@ -85,6 +236,325 @@
                     </Image.RenderTransform>
                 </Image>
             </Canvas>
+
+            <!-- Interactive Crop Mode Overlay (Activated via 'X') -->
+            <Canvas x:Name="CropOverlayCanvas"
+                    Background="#01000000"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    Cursor="Cross"
+                    Visibility="Collapsed"
+                    MouseLeftButtonDown="CropOverlayCanvas_MouseLeftButtonDown"
+                    MouseMove="CropOverlayCanvas_MouseMove"
+                    MouseLeftButtonUp="CropOverlayCanvas_MouseLeftButtonUp">
+
+                <!-- 4 dimming rectangles around the active selection -->
+                <Rectangle x:Name="CropMaskTop" Fill="#A8000000" IsHitTestVisible="False" />
+                <Rectangle x:Name="CropMaskBottom" Fill="#A8000000" IsHitTestVisible="False" />
+                <Rectangle x:Name="CropMaskLeft" Fill="#A8000000" IsHitTestVisible="False" />
+                <Rectangle x:Name="CropMaskRight" Fill="#A8000000" IsHitTestVisible="False" />
+
+                <!-- Selection Rectangle + Rule-of-Thirds Grid + 8 Resize Handles -->
+                <Grid x:Name="CropSelectionContainer"
+                      Visibility="Collapsed"
+                      IsHitTestVisible="False">
+                    <!-- Rule of thirds subtle lines -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Column="0" Grid.RowSpan="3" BorderBrush="#38FFFFFF" BorderThickness="0,0,1,0" />
+                        <Border Grid.Column="1" Grid.RowSpan="3" BorderBrush="#38FFFFFF" BorderThickness="0,0,1,0" />
+                        <Border Grid.Row="0" Grid.ColumnSpan="3" BorderBrush="#38FFFFFF" BorderThickness="0,0,0,1" />
+                        <Border Grid.Row="1" Grid.ColumnSpan="3" BorderBrush="#38FFFFFF" BorderThickness="0,0,0,1" />
+                    </Grid>
+
+                    <!-- Main Border -->
+                    <Border BorderBrush="#3B82F6" BorderThickness="2">
+                        <Border BorderBrush="#66FFFFFF" BorderThickness="1" />
+                    </Border>
+
+                    <!-- 8 Visual Handles (4 corners + 4 edge midpoints) -->
+                    <Rectangle Width="10" Height="10" Fill="White" Stroke="#3B82F6" StrokeThickness="2"
+                               HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-5,-5,0,0" />
+                    <Rectangle Width="10" Height="10" Fill="White" Stroke="#3B82F6" StrokeThickness="2"
+                               HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-5,-5,0" />
+                    <Rectangle Width="10" Height="10" Fill="White" Stroke="#3B82F6" StrokeThickness="2"
+                               HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="-5,0,0,-5" />
+                    <Rectangle Width="10" Height="10" Fill="White" Stroke="#3B82F6" StrokeThickness="2"
+                               HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-5,-5" />
+
+                    <Rectangle Width="10" Height="10" Fill="White" Stroke="#3B82F6" StrokeThickness="2"
+                               HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,-5,0,0" />
+                    <Rectangle Width="10" Height="10" Fill="White" Stroke="#3B82F6" StrokeThickness="2"
+                               HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,-5" />
+                    <Rectangle Width="10" Height="10" Fill="White" Stroke="#3B82F6" StrokeThickness="2"
+                               HorizontalAlignment="Left" VerticalAlignment="Center" Margin="-5,0,0,0" />
+                    <Rectangle Width="10" Height="10" Fill="White" Stroke="#3B82F6" StrokeThickness="2"
+                               HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,-5,0" />
+                </Grid>
+
+                <!-- TOP-LEFT: Live Pixel Dimension Badge -->
+                <Border x:Name="CropSizeBadge"
+                        Background="#EE1E1E1E"
+                        BorderBrush="#3B82F6"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="8,4"
+                        Visibility="Collapsed"
+                        IsHitTestVisible="False">
+                    <TextBlock x:Name="CropSizeBadgeText"
+                               Foreground="White"
+                               FontSize="12"
+                               FontWeight="SemiBold" />
+                </Border>
+
+                <!-- TOP-RIGHT: Confirm (OK) & Reset Buttons -->
+                <StackPanel x:Name="CropActionBar"
+                            Orientation="Horizontal"
+                            Visibility="Collapsed">
+                    <Button Content="✓ OK (Enter)"
+                            Click="CropConfirmButton_Click"
+                            Background="#3B82F6"
+                            Foreground="White"
+                            BorderThickness="0"
+                            FontWeight="SemiBold"
+                            FontSize="12"
+                            Padding="12,5"
+                            Cursor="Hand" />
+                    <Button Content="✕"
+                            ToolTip="Zrušit výběr oblasti"
+                            Click="CropResetButton_Click"
+                            Background="#EE1E1E1E"
+                            Foreground="#D1D5DB"
+                            BorderBrush="#3E3E42"
+                            BorderThickness="1"
+                            FontWeight="SemiBold"
+                            FontSize="12"
+                            Padding="8,4"
+                            Margin="5,0,0,0"
+                            Cursor="Hand" />
+                </StackPanel>
+            </Canvas>
+
+            <!-- Top Hint Banner in Crop Mode -->
+            <Border x:Name="CropHintBanner"
+                    Background="#DD1E1E1E"
+                    BorderBrush="#3B82F6"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="16,8"
+                    Margin="0,20,0,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    IsHitTestVisible="False"
+                    Visibility="Collapsed">
+                <TextBlock x:Name="CropHintBannerText"
+                           Text="Režim výstřižku (X): Tažením myší vyberte oblast   •   Esc: Ukončit výstřižek"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           FontSize="13"
+                           FontWeight="SemiBold" />
+            </Border>
+
+            <!-- ==================== LEFT-EDGE AUTO-HIDE FLYOUT PANEL (FastStone / TeamViewer style) ==================== -->
+            <Border x:Name="LeftFlyoutPanel"
+                    Width="252"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Background="#F218181B"
+                    BorderBrush="#3B82F6"
+                    BorderThickness="0,1,1,1"
+                    CornerRadius="0,10,10,0"
+                    Padding="12,12,12,12"
+                    Visibility="Collapsed"
+                    MouseLeave="LeftFlyoutPanel_MouseLeave">
+                <StackPanel>
+                    <!-- Active Image Info Header -->
+                    <Border Background="#232329"
+                            CornerRadius="6"
+                            Padding="10,8"
+                            Margin="0,0,0,10">
+                        <StackPanel>
+                            <TextBlock x:Name="FlyoutFileNameText"
+                                       Text="Obrázek"
+                                       Foreground="#F3F4F6"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock x:Name="FlyoutFileDetailsText"
+                                       Text="—"
+                                       Foreground="#9CA3AF"
+                                       FontSize="11.5"
+                                       Margin="0,2,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Section 1: Navigace a pohled -->
+                    <TextBlock Text="POHLED A NAVIGACE"
+                               Foreground="#60A5FA"
+                               FontSize="10.5"
+                               FontWeight="Bold"
+                               Margin="8,2,0,4" />
+
+                    <Grid Margin="0,0,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="6" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                Style="{StaticResource FlyoutMenuButtonStyle}"
+                                Content="◀ Předchozí"
+                                Tag="←"
+                                Click="FlyoutPrevButton_Click" />
+                        <Button Grid.Column="2"
+                                Style="{StaticResource FlyoutMenuButtonStyle}"
+                                Content="Další ▶"
+                                Tag="→"
+                                Click="FlyoutNextButton_Click" />
+                    </Grid>
+
+                    <Button Style="{StaticResource FlyoutMenuButtonStyle}"
+                            Content="▦ Přehled složky (Overview)"
+                            Tag="Enter / Esc"
+                            Click="FlyoutOverviewButton_Click" />
+                    <Button Style="{StaticResource FlyoutMenuButtonStyle}"
+                            Content="📂 Otevřít soubor..."
+                            Tag="O"
+                            Click="OpenFileButton_Click" />
+
+                    <Separator Background="#2D2D35" Margin="4,7" />
+
+                    <!-- Section 2: Přiblížení (Zoom) -->
+                    <TextBlock Text="PŘIBLÍŽENÍ (ZOOM)"
+                               Foreground="#60A5FA"
+                               FontSize="10.5"
+                               FontWeight="Bold"
+                               Margin="8,0,0,4" />
+
+                    <Grid Margin="0,0,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="6" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                Style="{StaticResource FlyoutMenuButtonStyle}"
+                                Content="＋ Přiblížit"
+                                Tag="+"
+                                Click="FlyoutZoomInButton_Click" />
+                        <Button Grid.Column="2"
+                                Style="{StaticResource FlyoutMenuButtonStyle}"
+                                Content="－ Oddálit"
+                                Tag="-"
+                                Click="FlyoutZoomOutButton_Click" />
+                    </Grid>
+
+                    <Button Style="{StaticResource FlyoutMenuButtonStyle}"
+                            Content="🔍 Skutečná velikost 1:1"
+                            Tag="*"
+                            Click="FlyoutZoom100Button_Click" />
+                    <Button Style="{StaticResource FlyoutMenuButtonStyle}"
+                            Content="⛶ Přizpůsobit oknu (Fit)"
+                            Tag="/"
+                            Click="FlyoutZoomFitButton_Click" />
+                    <Button x:Name="FlyoutWheelModeButton"
+                            Style="{StaticResource FlyoutMenuButtonStyle}"
+                            Content="🖱 Kolečko: Listování"
+                            Tag="M"
+                            Click="WheelModeButton_Click" />
+
+                    <Separator Background="#2D2D35" Margin="4,7" />
+
+                    <!-- Section 3: Úpravy a výstřižky -->
+                    <TextBlock Text="ÚPRAVY A VÝŘEZ"
+                               Foreground="#60A5FA"
+                               FontSize="10.5"
+                               FontWeight="Bold"
+                               Margin="8,0,0,4" />
+
+                    <Grid Margin="0,0,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="6" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                Style="{StaticResource FlyoutMenuButtonStyle}"
+                                Content="⟲ Doleva"
+                                Tag="L"
+                                Click="FlyoutRotateLeftButton_Click" />
+                        <Button Grid.Column="2"
+                                Style="{StaticResource FlyoutMenuButtonStyle}"
+                                Content="⟳ Doprava"
+                                Tag="R"
+                                Click="FlyoutRotateRightButton_Click" />
+                    </Grid>
+
+                    <Grid Margin="0,0,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="6" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                Style="{StaticResource FlyoutMenuButtonStyle}"
+                                Content="⇄ Zrcadlit H"
+                                Tag="H"
+                                Click="FlyoutFlipHButton_Click" />
+                        <Button Grid.Column="2"
+                                Style="{StaticResource FlyoutMenuButtonStyle}"
+                                Content="⇅ Zrcadlit V"
+                                Tag="V"
+                                Click="FlyoutFlipVButton_Click" />
+                    </Grid>
+
+                    <Button Style="{StaticResource FlyoutMenuButtonStyle}"
+                            Content="✂ Výstřižek oblasti (Crop)"
+                            Tag="X"
+                            Click="FlyoutCropButton_Click" />
+
+                    <Button x:Name="FlyoutEditSaveModeButton"
+                            Style="{StaticResource FlyoutMenuButtonStyle}"
+                            Content="💾 Ukládání: Auto sufix"
+                            Tag="U"
+                            Click="EditSaveModeButton_Click" />
+
+                    <Separator Background="#2D2D35" Margin="4,7" />
+
+                    <!-- Section 4: Správa souboru -->
+                    <TextBlock Text="SOUBOR"
+                               Foreground="#60A5FA"
+                               FontSize="10.5"
+                               FontWeight="Bold"
+                               Margin="8,0,0,4" />
+
+                    <Button Style="{StaticResource FlyoutMenuButtonStyle}"
+                            Content="📋 Kopírovat do složky..."
+                            Tag="C"
+                            Click="FlyoutCopyButton_Click" />
+                    <Button Style="{StaticResource FlyoutMenuButtonStyle}"
+                            Content="⚡ Dávková konverze..."
+                            Tag="B / F3"
+                            Click="BatchConvertButton_Click" />
+                    <Button Style="{StaticResource FlyoutMenuButtonStyle}"
+                            Content="🗑 Smazat do Koše"
+                            Tag="Del"
+                            Foreground="#F87171"
+                            Click="FlyoutDeleteButton_Click" />
+                    <Button Style="{StaticResource FlyoutMenuButtonStyle}"
+                            Content="✕ Ukončit prohlížeč"
+                            Tag="Esc"
+                            Click="CloseButton_Click" />
+                </StackPanel>
+            </Border>
         </Grid>
 
         <!-- ==================== 2. OVERVIEW (THUMBNAIL GRID) ==================== -->
@@ -110,6 +580,8 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0"
@@ -127,8 +599,35 @@
                                VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis" />
 
+                    <Button Grid.Column="2"
+                            Content="⚡ Dávková konverze (B)"
+                            ToolTip="Dávková konverze a změna rozměrů obrázků (zkratka B nebo F3)"
+                            Click="BatchConvertButton_Click"
+                            Background="{StaticResource AccentBrush}"
+                            Foreground="White"
+                            BorderThickness="0"
+                            FontWeight="SemiBold"
+                            Padding="12,5"
+                            Margin="12,0,0,0"
+                            Cursor="Hand"
+                            VerticalAlignment="Center" />
+
+                    <Button x:Name="EditSaveModeButton"
+                            Grid.Column="3"
+                            Content="Ukládání: Auto sufix (U)"
+                            ToolTip="Přepnout režim ukládání otočení a výřezů: Automaticky se sufixem (_rotated / _cropped) vs. Dialog Uložit jako… (zkratka U)"
+                            Click="EditSaveModeButton_Click"
+                            Background="#2D2D30"
+                            Foreground="{StaticResource TextPrimaryBrush}"
+                            BorderBrush="#3E3E42"
+                            BorderThickness="1"
+                            Padding="12,5"
+                            Margin="8,0,0,0"
+                            Cursor="Hand"
+                            VerticalAlignment="Center" />
+
                     <Button x:Name="WheelModeButton"
-                            Grid.Column="2"
+                            Grid.Column="4"
                             Content="Kolečko: Listování (M)"
                             ToolTip="Přepnout chování kolečka myši ve Fullscreenu: Listování mezi fotkami vs. Zoom (zkratka M; Ctrl+Kolečko vždy zoomuje)"
                             Click="WheelModeButton_Click"
@@ -137,11 +636,11 @@
                             BorderBrush="#3E3E42"
                             BorderThickness="1"
                             Padding="12,5"
-                            Margin="12,0,0,0"
+                            Margin="8,0,0,0"
                             Cursor="Hand"
                             VerticalAlignment="Center" />
 
-                    <Button Grid.Column="3"
+                    <Button Grid.Column="5"
                             Content="Otevřít obrázek / složku (O)"
                             Click="OpenFileButton_Click"
                             Background="#2D2D30"
@@ -153,7 +652,7 @@
                             Cursor="Hand"
                             VerticalAlignment="Center" />
 
-                    <Button Grid.Column="4"
+                    <Button Grid.Column="6"
                             Content="✕"
                             ToolTip="Ukončit (Esc)"
                             Click="CloseButton_Click"
@@ -168,78 +667,228 @@
                 </Grid>
             </Border>
 
-            <!-- Thumbnail Grid -->
-            <ListBox x:Name="ThumbnailListBox"
-                     Grid.Row="1"
-                     Background="Transparent"
-                     BorderThickness="0"
-                     Padding="12"
-                     SelectionMode="Single"
-                     ItemContainerStyle="{StaticResource ThumbnailListBoxItemStyle}"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                     ScrollViewer.VerticalScrollBarVisibility="Auto"
-                     ScrollViewer.CanContentScroll="False"
-                     SelectionChanged="ThumbnailListBox_SelectionChanged">
-                <ListBox.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel IsItemsHost="True" Orientation="Horizontal" />
-                    </ItemsPanelTemplate>
-                </ListBox.ItemsPanel>
-                <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type models:ImageItem}">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="26" />
-                            </Grid.RowDefinitions>
+            <!-- 3-Pane FastStone Workspace (Left: Folder Tree + Live Preview, Right: Thumbnail Grid) -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="OverviewLeftColumn" Width="285" MinWidth="180" MaxWidth="650" />
+                    <ColumnDefinition Width="6" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-                            <Border Grid.Row="0"
-                                    Background="#18181A"
-                                    CornerRadius="4"
-                                    ClipToBounds="True">
-                                <Image Source="{Binding Thumbnail}"
-                                       Stretch="Uniform"
-                                       StretchDirection="DownOnly"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       RenderOptions.BitmapScalingMode="HighQuality" />
-                            </Border>
+                <!-- LEFT SIDEBAR: Folder Tree (Top) + Live Preview (Bottom) -->
+                <Grid Grid.Column="0" Background="#18181B">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" MinHeight="100" />
+                        <RowDefinition Height="6" />
+                        <RowDefinition x:Name="OverviewPreviewRow" Height="235" MinHeight="100" />
+                    </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="1"
-                                       Text="{Binding FileName}"
-                                       Foreground="{StaticResource TextPrimaryBrush}"
-                                       FontSize="12"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Bottom"
-                                       TextTrimming="CharacterEllipsis"
-                                       ToolTip="{Binding FileName}" />
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+                    <!-- TOP-LEFT: Folder Tree -->
+                    <Grid Grid.Row="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="28" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
 
-            <!-- Empty State Panel -->
-            <StackPanel x:Name="EmptyStatePanel"
-                        Grid.Row="1"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Visibility="Collapsed">
-                <TextBlock Text="Ve vybrané složce nejsou žádné podporované obrázky (JPG, PNG, WEBP, GIF)."
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           FontSize="15"
-                           HorizontalAlignment="Center"
-                           Margin="0,0,0,16" />
-                <Button Content="Vybrat obrázek ze souboru (O)"
-                        Click="OpenFileButton_Click"
-                        Background="{StaticResource AccentBrush}"
-                        Foreground="White"
-                        BorderThickness="0"
-                        Padding="18,9"
-                        FontSize="13"
-                        FontWeight="SemiBold"
-                        HorizontalAlignment="Center"
-                        Cursor="Hand" />
-            </StackPanel>
+                        <Border Grid.Row="0"
+                                Background="#1E1E1E"
+                                BorderBrush="#2D2D30"
+                                BorderThickness="0,0,0,1"
+                                Padding="10,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="SLOŽKY"
+                                           Foreground="#9CA3AF"
+                                           FontSize="11"
+                                           FontWeight="Bold"
+                                           VerticalAlignment="Center" />
+                                <Button Grid.Column="1"
+                                        Content="⟳"
+                                        ToolTip="Obnovit strom složek"
+                                        Click="RefreshFolderTreeButton_Click"
+                                        Background="Transparent"
+                                        Foreground="#9CA3AF"
+                                        BorderThickness="0"
+                                        FontSize="13"
+                                        Cursor="Hand"
+                                        VerticalAlignment="Center" />
+                            </Grid>
+                        </Border>
+
+                        <TreeView x:Name="FolderTreeView"
+                                  Grid.Row="1"
+                                  Background="#18181B"
+                                  BorderThickness="0"
+                                  Padding="4,6"
+                                  ItemContainerStyle="{StaticResource FolderTreeViewItemStyle}"
+                                  SelectedItemChanged="FolderTreeView_SelectedItemChanged"
+                                  VirtualizingStackPanel.IsVirtualizing="False">
+                            <TreeView.ItemTemplate>
+                                <HierarchicalDataTemplate DataType="{x:Type models:FolderNode}" ItemsSource="{Binding Children}">
+                                    <StackPanel Orientation="Horizontal" Margin="2,1">
+                                        <TextBlock Text="{Binding Icon}" FontSize="12.5" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding DisplayName}" FontSize="12.5" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </HierarchicalDataTemplate>
+                            </TreeView.ItemTemplate>
+                        </TreeView>
+                    </Grid>
+
+                    <!-- HORIZONTAL SPLITTER (Tree vs Preview) -->
+                    <GridSplitter Grid.Row="1"
+                                  Height="6"
+                                  HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Center"
+                                  ResizeDirection="Rows"
+                                  ResizeBehavior="PreviousAndNext"
+                                  Background="#252529"
+                                  BorderBrush="#2D2D30"
+                                  BorderThickness="0,1"
+                                  Cursor="SizeNS" />
+
+                    <!-- BOTTOM-LEFT: Dynamic Preview of Selected Photo -->
+                    <Grid Grid.Row="2" Background="#121212">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="28" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0"
+                                Background="#1E1E1E"
+                                BorderBrush="#2D2D30"
+                                BorderThickness="0,0,0,1"
+                                Padding="10,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="NÁHLED"
+                                           Foreground="#9CA3AF"
+                                           FontSize="11"
+                                           FontWeight="Bold"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,8,0" />
+                                <TextBlock x:Name="OverviewPreviewMetaText"
+                                           Grid.Column="1"
+                                           Foreground="#60A5FA"
+                                           FontSize="11.5"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" />
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Row="1"
+                                Background="#0D0D0F"
+                                Margin="6"
+                                CornerRadius="5"
+                                BorderBrush="#252529"
+                                BorderThickness="1"
+                                ClipToBounds="True"
+                                Cursor="Hand"
+                                ToolTip="Kliknutím přepnete do Fullscreenu (Enter)"
+                                MouseLeftButtonDown="OverviewPreviewBorder_MouseLeftButtonDown">
+                            <Image x:Name="OverviewPreviewImage"
+                                   Stretch="Uniform"
+                                   StretchDirection="DownOnly"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <!-- VERTICAL SPLITTER (Left Sidebar vs Right Thumbnail Grid) -->
+                <GridSplitter Grid.Column="1"
+                              Width="6"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Stretch"
+                              ResizeDirection="Columns"
+                              ResizeBehavior="PreviousAndNext"
+                              Background="#252529"
+                              BorderBrush="#2D2D30"
+                              BorderThickness="1,0"
+                              Cursor="SizeWE" />
+
+                <!-- RIGHT PANE: Thumbnail Grid & Empty State -->
+                <Grid Grid.Column="2">
+                    <ListBox x:Name="ThumbnailListBox"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Padding="12"
+                             SelectionMode="Extended"
+                             ItemContainerStyle="{StaticResource ThumbnailListBoxItemStyle}"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.CanContentScroll="False"
+                             SelectionChanged="ThumbnailListBox_SelectionChanged">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel IsItemsHost="True" Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type models:ImageItem}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="26" />
+                                    </Grid.RowDefinitions>
+
+                                    <Border Grid.Row="0"
+                                            Background="#18181A"
+                                            CornerRadius="4"
+                                            ClipToBounds="True">
+                                        <Image Source="{Binding Thumbnail}"
+                                               Stretch="Uniform"
+                                               StretchDirection="DownOnly"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               RenderOptions.BitmapScalingMode="HighQuality" />
+                                    </Border>
+
+                                    <TextBlock Grid.Row="1"
+                                               Text="{Binding FileName}"
+                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                               FontSize="12"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Bottom"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding FileName}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!-- Empty State Panel -->
+                    <StackPanel x:Name="EmptyStatePanel"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Visibility="Collapsed">
+                        <TextBlock Text="Ve vybrané složce nejsou žádné podporované obrázky (JPG, PNG, WEBP, GIF)."
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="15"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,16" />
+                        <Button Content="Vybrat obrázek ze souboru (O)"
+                                Click="OpenFileButton_Click"
+                                Background="{StaticResource AccentBrush}"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Padding="18,9"
+                                FontSize="13"
+                                FontWeight="SemiBold"
+                                HorizontalAlignment="Center"
+                                Cursor="Hand" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
 
             <!-- Bottom Status Bar in Overview -->
             <Border Grid.Row="2"
@@ -260,7 +909,7 @@
                                VerticalAlignment="Center" />
 
                     <TextBlock Grid.Column="1"
-                               Text="Enter: Fullscreen  •  Kolečko: Další/Předchozí (Ctrl+Kolečko/+/-: Zoom)  •  M: Režim kolečka  •  *: 100%  •  C: Kopírovat  •  Del: Koš"
+                               Text="Enter: Fullscreen  •  L/R/H/V: Rotace/Zrcadlo  •  X: Výstřižek  •  *: 100%  •  C: Kopírovat  •  Del: Koš"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="12"
                                VerticalAlignment="Center" />

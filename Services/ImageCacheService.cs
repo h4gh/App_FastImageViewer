@@ -150,6 +150,11 @@ public sealed class ImageCacheService
         }
     }
 
+    public void UpdateCached(string filePath, BitmapSource bitmap)
+    {
+        AddToCache(filePath, bitmap);
+    }
+
     public void Clear()
     {
         lock (_cacheLock)

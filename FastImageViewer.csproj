@@ -9,6 +9,11 @@
     <AssemblyName>FastImageViewer</AssemblyName>
     <RootNamespace>FastImageViewer</RootNamespace>
     <Optimize>true</Optimize>
+    <NoWarn>NU1902;NU1903</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.7" />
+  </ItemGroup>
 
 </Project>

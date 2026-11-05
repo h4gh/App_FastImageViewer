@@ -7,7 +7,11 @@ public sealed class AppSettings
 {
     public string? LastFolderPath { get; set; }
     public string? LastCopyTargetFolder { get; set; }
+    public string? LastBatchOutputFolder { get; set; }
     public bool MouseWheelZoom { get; set; } = false;
+    public bool UseSaveAsDialogForEdits { get; set; } = false;
+    public double OverviewLeftPaneWidth { get; set; } = 285;
+    public double OverviewPreviewPaneHeight { get; set; } = 235;
 }
 
 public static class AppSettingsService
