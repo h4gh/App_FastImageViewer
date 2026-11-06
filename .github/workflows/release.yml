@@ -64,7 +64,7 @@ jobs:
             -o ./dist/single_full
           Copy-Item ./dist/single_full/FastImageViewer.exe ./artifacts/FastImageViewer.exe -Force
 
-      - name: Publish 3. Lightweight Single-File EXE (Requires .NET 9 Runtime)
+      - name: Publish 3. Lightweight Single-File EXE & ZIP (Requires .NET 9 Runtime)
         shell: pwsh
         run: |
           $ver = "${{ steps.vars.outputs.VERSION }}"
@@ -74,6 +74,7 @@ jobs:
             -p:Version=$ver -p:AssemblyVersion="$ver.0" -p:FileVersion="$ver.0" `
             -o ./dist/single_light
           Copy-Item ./dist/single_light/FastImageViewer.exe ./artifacts/FastImageViewer_Light_net9.exe -Force
+          Compress-Archive -Path ./dist/single_light/FastImageViewer.exe -DestinationPath ./artifacts/FastImageViewer-win-x64-light-net9.zip -Force
 
       - name: Generate SHA-256 Checksums
         shell: pwsh
@@ -93,6 +94,7 @@ jobs:
           generate_release_notes: true
           files: |
             artifacts/FastImageViewer-win-x64-portable.zip
+            artifacts/FastImageViewer-win-x64-light-net9.zip
             artifacts/FastImageViewer.exe
             artifacts/FastImageViewer_Light_net9.exe
             artifacts/SHA256SUMS.txt

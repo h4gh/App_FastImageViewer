@@ -76,10 +76,12 @@ Nejnovější verzi najdete vždy v sekci **[Releases](https://github.com/h4gh/A
      2. **Před rozbalením** klikněte na stažený `.zip` soubor pravým tlačítkem myši -> **Vlastnosti (Properties)**.
      3. Úplně dole zaškrtněte **„Odblokovat“ (Unblock)** a klikněte na **OK**.
      4. Nyní `.zip` rozbalte do libovolné složky a spusťte `FastImageViewer.exe`.
-2. **`FastImageViewer.exe` *(Samostatný Single-File)***
+2. **`FastImageViewer-win-x64-light-net9.zip` *(Ultralehký `.zip` – cca 1 MB)***
+   * Minimalistická verze zabalená v `.zip` archivu (pro bezproblémové stažení přes firemní proxy a možnost *Odblokovat / Unblock* před rozbalením). Uvnitř je jediný ~2,3MB soubor `FastImageViewer.exe` pro počítače, kde je již nainstalován [.NET 9 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/9.0).
+3. **`FastImageViewer.exe` *(Samostatný Single-File)***
    * Vše zabalené v jediném `.exe` souboru (~60 MB), nevyžaduje instalaci .NET 9.
-3. **`FastImageViewer_Light_net9.exe` *(Ultralehký Single-File)***
-   * Jediný `.exe` soubor (~2.3 MB) pro počítače, kde je již nainstalován [.NET 9 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/9.0).
+4. **`FastImageViewer_Light_net9.exe` *(Ultralehký Single-File)***
+   * Jediný `.exe` soubor (~2.3 MB) pro počítače s nainstalovaným .NET 9 Desktop Runtime.
 
 ---
 
