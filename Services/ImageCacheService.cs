@@ -3,6 +3,9 @@ using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using FastImageViewer.Models;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace FastImageViewer.Services;
 
@@ -10,7 +13,48 @@ public sealed class ImageCacheService
 {
     public static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".jpg", ".jpeg", ".png", ".webp", ".gif"
+        ".jpg", ".jpeg", ".jfif",
+        ".png", ".webp", ".gif",
+        ".bmp", ".tif", ".tiff",
+        ".ico", ".heic", ".heif", ".avif"
+    };
+
+    public const string OpenFileDialogFilter =
+        "Všechny podporované obrázky (*.jpg;*.jpeg;*.jfif;*.png;*.webp;*.gif;*.bmp;*.tif;*.tiff;*.ico;*.heic;*.heif;*.avif)|*.jpg;*.jpeg;*.jfif;*.png;*.webp;*.gif;*.bmp;*.tif;*.tiff;*.ico;*.heic;*.heif;*.avif|" +
+        "JPEG (*.jpg;*.jpeg;*.jfif)|*.jpg;*.jpeg;*.jfif|" +
+        "PNG (*.png)|*.png|" +
+        "WebP (*.webp)|*.webp|" +
+        "BMP (*.bmp)|*.bmp|" +
+        "TIFF (*.tif;*.tiff)|*.tif;*.tiff|" +
+        "GIF (*.gif)|*.gif|" +
+        "Ikony (*.ico)|*.ico|" +
+        "HEIC / AVIF (*.heic;*.heif;*.avif)|*.heic;*.heif;*.avif|" +
+        "Všechny soubory (*.*)|*.*";
+
+    public const string SaveFileDialogFilter =
+        "JPEG obrázek (*.jpg;*.jpeg;*.jfif)|*.jpg;*.jpeg;*.jfif|" +
+        "PNG obrázek (*.png)|*.png|" +
+        "WebP obrázek (*.webp)|*.webp|" +
+        "BMP obrázek (*.bmp)|*.bmp|" +
+        "TIFF obrázek (*.tif;*.tiff)|*.tif;*.tiff|" +
+        "GIF obrázek (*.gif)|*.gif";
+
+    public static int GetSaveFilterIndex(string extension) => extension.ToLowerInvariant() switch
+    {
+        ".png" or ".ico" => 2,
+        ".webp" => 3,
+        ".bmp" => 4,
+        ".tif" or ".tiff" => 5,
+        ".gif" => 6,
+        _ => 1
+    };
+
+    public static string NormalizeWritableExtension(string extension) => extension.ToLowerInvariant() switch
+    {
+        ".ico" => ".png",
+        ".heic" or ".heif" or ".avif" => ".jpg",
+        "" => ".png",
+        var ext => ext
     };
 
     private const int MaxCacheSize = 9;
@@ -193,14 +237,47 @@ public sealed class ImageCacheService
         _lruOrder.AddFirst(filePath);
     }
 
+    public static BitmapSource? DecodeFullBitmap(string filePath) => DecodeImageFromFile(filePath, decodeWidth: null);
+
     private static BitmapSource? DecodeImageFromFile(string filePath, int? decodeWidth)
     {
+        if (!File.Exists(filePath))
+            return null;
+
+        byte[] bytes;
         try
         {
-            if (!File.Exists(filePath))
-                return null;
+            bytes = File.ReadAllBytes(filePath);
+        }
+        catch
+        {
+            return null;
+        }
 
-            byte[] bytes = File.ReadAllBytes(filePath);
+        string ext = Path.GetExtension(filePath).ToLowerInvariant();
+
+        // For .ico files, pick the highest-resolution frame from the icon directory
+        if (ext == ".ico")
+        {
+            try
+            {
+                using var icoStream = new MemoryStream(bytes);
+                var icoDecoder = new IconBitmapDecoder(icoStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+                var bestFrame = icoDecoder.Frames.OrderByDescending(f => f.PixelWidth).FirstOrDefault();
+                if (bestFrame != null)
+                {
+                    bestFrame.Freeze();
+                    return bestFrame;
+                }
+            }
+            catch
+            {
+                // Fall through to standard decoder
+            }
+        }
+
+        try
+        {
             ushort orientation = ReadExifOrientation(bytes);
 
             using var ms = new MemoryStream(bytes);
@@ -227,7 +304,32 @@ public sealed class ImageCacheService
         }
         catch
         {
-            return null;
+            // Fallback to ImageSharp if WIC could not decode a particular WebP / TIFF / BMP sub-format
+            try
+            {
+                using var img = Image.Load<Bgra32>(bytes);
+                img.Mutate(x => x.AutoOrient());
+                if (decodeWidth.HasValue && img.Width > decodeWidth.Value)
+                {
+                    int targetW = decodeWidth.Value;
+                    int targetH = Math.Max(1, (int)Math.Round(img.Height * (targetW / (double)img.Width)));
+                    img.Mutate(x => x.Resize(targetW, targetH));
+                }
+
+                int w = img.Width;
+                int h = img.Height;
+                int stride = w * 4;
+                byte[] pixelBytes = new byte[h * stride];
+                img.CopyPixelDataTo(pixelBytes);
+
+                var bmpSource = BitmapSource.Create(w, h, 96, 96, PixelFormats.Bgra32, null, pixelBytes, stride);
+                bmpSource.Freeze();
+                return bmpSource;
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 

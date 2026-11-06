@@ -182,7 +182,7 @@ public partial class BatchConvertWindow : Window
         {
             Title = "Vyberte obrázky pro dávkovou konverzi",
             Multiselect = true,
-            Filter = "Obrázky (*.jpg;*.jpeg;*.png;*.webp;*.gif)|*.jpg;*.jpeg;*.png;*.webp;*.gif|Všechny soubory (*.*)|*.*",
+            Filter = ImageCacheService.OpenFileDialogFilter,
             InitialDirectory = Directory.Exists(_currentViewerFolder)
                 ? _currentViewerFolder
                 : Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
@@ -231,9 +231,9 @@ public partial class BatchConvertWindow : Window
         if (QualityPanel == null)
             return;
 
-        bool isPng = FormatComboBox.SelectedIndex == 2;
-        QualityPanel.IsEnabled = !isPng;
-        QualityPanel.Opacity = isPng ? 0.4 : 1.0;
+        bool hasQualitySlider = FormatComboBox.SelectedIndex is 0 or 1;
+        QualityPanel.IsEnabled = hasQualitySlider;
+        QualityPanel.Opacity = hasQualitySlider ? 1.0 : 0.4;
     }
 
     private void QualitySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -308,6 +308,8 @@ public partial class BatchConvertWindow : Window
         {
             1 => BatchOutputFormat.Webp,
             2 => BatchOutputFormat.Png,
+            3 => BatchOutputFormat.Bmp,
+            4 => BatchOutputFormat.Tiff,
             _ => BatchOutputFormat.Jpeg
         };
 

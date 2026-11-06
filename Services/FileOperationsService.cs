@@ -31,6 +31,26 @@ public static class FileOperationsService
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     private static extern int SHFileOperation(ref SHFILEOPSTRUCT FileOp);
 
+    [DllImport("shell32.dll")]
+    private static extern void SHChangeNotify(uint wEventId, uint uFlags, nint dwItem1, nint dwItem2);
+
+    /// <summary>
+    /// Notifies Windows Explorer to refresh file association icons in its shell icon cache.
+    /// </summary>
+    public static void RefreshShellIconCache()
+    {
+        try
+        {
+            const uint SHCNE_ASSOCCHANGED = 0x08000000;
+            const uint SHCNF_IDLIST = 0x0000;
+            SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, 0, 0);
+        }
+        catch
+        {
+            // Ignore shell notification errors
+        }
+    }
+
     /// <summary>
     /// Silently moves the specified file to the Windows Recycle Bin without confirmation dialogs.
     /// </summary>

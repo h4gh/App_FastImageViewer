@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:models="clr-namespace:FastImageViewer.Models"
         Title="FastImageViewer"
+        Icon="pack://application:,,,/Assets/app.ico"
         Width="1280"
         Height="800"
         WindowStartupLocation="CenterScreen"
@@ -601,7 +602,7 @@
                                 Margin="8,0,0,0"
                                 VerticalAlignment="Center">
                             <TextBlock x:Name="AppVersionText"
-                                       Text="v1.0.0"
+                                       Text="v1.0.1"
                                        Foreground="#9CA3AF"
                                        FontSize="11"
                                        FontFamily="Consolas" />
@@ -887,7 +888,7 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Visibility="Collapsed">
-                        <TextBlock Text="Ve vybrané složce nejsou žádné podporované obrázky (JPG, PNG, WEBP, GIF)."
+                        <TextBlock Text="Ve vybrané složce nejsou žádné podporované obrázky (JPG, JFIF, PNG, WEBP, BMP, TIFF, GIF, ICO, HEIC, AVIF)."
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    FontSize="15"
                                    HorizontalAlignment="Center"

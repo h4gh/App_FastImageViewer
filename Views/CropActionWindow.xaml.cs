@@ -34,9 +34,7 @@ public partial class CropActionWindow : Window
         string dir = Path.GetDirectoryName(_sourceFilePath)
             ?? Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
         string baseName = Path.GetFileNameWithoutExtension(_sourceFilePath);
-        string ext = Path.GetExtension(_sourceFilePath);
-        if (string.IsNullOrEmpty(ext))
-            ext = ".png";
+        string ext = ImageCacheService.NormalizeWritableExtension(Path.GetExtension(_sourceFilePath));
 
         string defaultFileName = GetUniqueCroppedFileName(dir, baseName, ext);
         _autoTargetFilePath = Path.Combine(dir, defaultFileName);
@@ -129,14 +127,8 @@ public partial class CropActionWindow : Window
                 Title = "Uložit výstřižek jako...",
                 InitialDirectory = dir,
                 FileName = defaultFileName,
-                Filter = "JPEG obrázek (*.jpg;*.jpeg)|*.jpg;*.jpeg|PNG obrázek (*.png)|*.png|WebP obrázek (*.webp)|*.webp|GIF obrázek (*.gif)|*.gif",
-                FilterIndex = ext switch
-                {
-                    ".png" => 2,
-                    ".webp" => 3,
-                    ".gif" => 4,
-                    _ => 1
-                }
+                Filter = ImageCacheService.SaveFileDialogFilter,
+                FilterIndex = ImageCacheService.GetSaveFilterIndex(ext)
             };
 
             if (dlg.ShowDialog(this) == true)

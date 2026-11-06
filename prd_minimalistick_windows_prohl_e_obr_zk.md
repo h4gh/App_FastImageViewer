@@ -19,7 +19,7 @@ Vytvořit extrémně rychlý, lehký a nativní desktopový prohlížeč obrázk
 * **Přepínání pohledů a ukončení:**
   * Klávesa `Enter` (nebo dvojklik myší) přepíná mezi **Fullscreenem** a **Overview**.
   * Klávesa `Esc` ve Fullscreenu vrací uživatele zpět do **Overview**; v režimu Overview klávesa `Esc` aplikaci ukončí.
-* **Podporované formáty:** `JPG / JPEG`, `PNG`, `WEBP`, `GIF` (statický).
+* **Podporované formáty:** `JPG`, `JPEG`, `JFIF`, `PNG`, `WEBP`, `GIF`, `BMP`, `TIF`, `TIFF`, `ICO`, `HEIC`, `HEIF`, `AVIF`.
 * **Navigace ve Fullscreenu:**
   * Plynulý posun mezi obrázky v aktuální složce: `Šipka vpravo` / `Šipka dolů` / `Mezerník` / `PageDown` (další), `Šipka vlevo` / `Šipka nahoru` / `Backspace` / `PageUp` (předchozí), `Home` / `End` (první / poslední).
   * Řazení souborů ve složce odpovídá přirozenému řazení podle názvu ve Windows Exploreru (`StrCmpLogicalW` natural sort, např. `img2.jpg` před `img10.jpg`).

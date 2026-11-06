@@ -80,9 +80,16 @@ public partial class MainWindow : Window
         _settings = AppSettingsService.Load();
 
         var asmVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-        string versionStr = asmVersion != null ? $"v{asmVersion.Major}.{asmVersion.Minor}.{asmVersion.Build}" : "v1.0.0";
+        string versionStr = asmVersion != null ? $"v{asmVersion.Major}.{asmVersion.Minor}.{asmVersion.Build}" : "v1.0.1";
         AppVersionText.Text = versionStr;
         Title = $"FastImageViewer {versionStr}";
+
+        if (!string.Equals(_settings.LastRunVersion, versionStr, StringComparison.Ordinal))
+        {
+            _settings.LastRunVersion = versionStr;
+            AppSettingsService.Save(_settings);
+            FileOperationsService.RefreshShellIconCache();
+        }
 
         OverviewLeftColumn.Width = new GridLength(Math.Clamp(_settings.OverviewLeftPaneWidth, 180, 600));
         OverviewPreviewRow.Height = new GridLength(Math.Clamp(_settings.OverviewPreviewPaneHeight, 100, 500));
@@ -869,14 +876,8 @@ public partial class MainWindow : Window
                             Title = "Uložit otočenou / převrácenou fotografii jako...",
                             InitialDirectory = Path.GetDirectoryName(rotatedFilePath) ?? _currentFolder,
                             FileName = Path.GetFileName(rotatedFilePath),
-                            Filter = "JPEG obrázek (*.jpg;*.jpeg)|*.jpg;*.jpeg|PNG obrázek (*.png)|*.png|WebP obrázek (*.webp)|*.webp|GIF obrázek (*.gif)|*.gif",
-                            FilterIndex = ext switch
-                            {
-                                ".png" => 2,
-                                ".webp" => 3,
-                                ".gif" => 4,
-                                _ => 1
-                            }
+                            Filter = ImageCacheService.SaveFileDialogFilter,
+                            FilterIndex = ImageCacheService.GetSaveFilterIndex(ext)
                         };
 
                         if (saveDlg.ShowDialog(this) != true)
@@ -937,7 +938,7 @@ public partial class MainWindow : Window
     {
         string dir = Path.GetDirectoryName(originalFilePath) ?? string.Empty;
         string baseName = Path.GetFileNameWithoutExtension(originalFilePath);
-        string ext = Path.GetExtension(originalFilePath);
+        string ext = ImageCacheService.NormalizeWritableExtension(Path.GetExtension(originalFilePath));
 
         string candidate = Path.Combine(dir, $"{baseName}_rotated{ext}");
         int counter = 2;
@@ -1929,7 +1930,7 @@ public partial class MainWindow : Window
         var dlg = new OpenFileDialog
         {
             Title = "Vyberte obrázek k prohlížení",
-            Filter = "Obrázky (*.jpg;*.jpeg;*.png;*.webp;*.gif)|*.jpg;*.jpeg;*.png;*.webp;*.gif|Všechny soubory (*.*)|*.*",
+            Filter = ImageCacheService.OpenFileDialogFilter,
             InitialDirectory = Directory.Exists(_currentFolder)
                 ? _currentFolder
                 : Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)

@@ -312,6 +312,8 @@
                                 <ComboBoxItem Content="JPEG (.jpg)" Tag="JPG" />
                                 <ComboBoxItem Content="WebP (.webp)" Tag="WEBP" />
                                 <ComboBoxItem Content="PNG (.png – bezeztrátový)" Tag="PNG" />
+                                <ComboBoxItem Content="BMP (.bmp – bitmapa)" Tag="BMP" />
+                                <ComboBoxItem Content="TIFF (.tif – dokument/sken)" Tag="TIFF" />
                             </ComboBox>
                         </Grid>
 

@@ -1,9 +1,14 @@
 using System.IO;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Formats.Bmp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Tiff;
 using SixLabors.ImageSharp.Formats.Webp;
+using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace FastImageViewer.Services;
@@ -12,7 +17,9 @@ public enum BatchOutputFormat
 {
     Jpeg,
     Webp,
-    Png
+    Png,
+    Bmp,
+    Tiff
 }
 
 public enum BatchResizeMode
@@ -93,10 +100,7 @@ public static class BatchConversionService
         BatchConvertOptions options,
         CancellationToken token)
     {
-        using var image = await Image.LoadAsync(inputFilePath, token).ConfigureAwait(false);
-
-        // Respect EXIF orientation
-        image.Mutate(x => x.AutoOrient());
+        using Image image = await LoadImageWithWicFallbackAsync(inputFilePath, token).ConfigureAwait(false);
 
         if (options.EnableResize)
         {
@@ -111,6 +115,8 @@ public static class BatchConversionService
         {
             BatchOutputFormat.Webp => ".webp",
             BatchOutputFormat.Png => ".png",
+            BatchOutputFormat.Bmp => ".bmp",
+            BatchOutputFormat.Tiff => ".tif",
             _ => ".jpg"
         };
 
@@ -125,6 +131,39 @@ public static class BatchConversionService
 
         IImageEncoder encoder = CreateEncoder(options.OutputFormat, options.Quality);
         await image.SaveAsync(destPath, encoder, token).ConfigureAwait(false);
+    }
+
+    private static async Task<Image> LoadImageWithWicFallbackAsync(string inputFilePath, CancellationToken token)
+    {
+        string ext = Path.GetExtension(inputFilePath).ToLowerInvariant();
+        if (ext is not (".ico" or ".heic" or ".heif" or ".avif"))
+        {
+            try
+            {
+                var img = await Image.LoadAsync(inputFilePath, token).ConfigureAwait(false);
+                img.Mutate(x => x.AutoOrient());
+                return img;
+            }
+            catch
+            {
+                // Fall through to WIC decoder
+            }
+        }
+
+        BitmapSource? bmp = ImageCacheService.DecodeFullBitmap(inputFilePath)
+            ?? throw new InvalidDataException($"Nelze načíst obrázek: {inputFilePath}");
+
+        BitmapSource bgraSource = bmp.Format == PixelFormats.Bgra32
+            ? bmp
+            : new FormatConvertedBitmap(bmp, PixelFormats.Bgra32, null, 0);
+
+        int width = bgraSource.PixelWidth;
+        int height = bgraSource.PixelHeight;
+        int stride = width * 4;
+        byte[] pixels = new byte[height * stride];
+        bgraSource.CopyPixels(pixels, stride, 0);
+
+        return Image.LoadPixelData<Bgra32>(pixels, width, height);
     }
 
     private static (int Width, int Height) CalculateTargetDimensions(
@@ -173,6 +212,8 @@ public static class BatchConversionService
                 FileFormat = clampedQuality >= 100 ? WebpFileFormatType.Lossless : WebpFileFormatType.Lossy
             },
             BatchOutputFormat.Png => new PngEncoder(),
+            BatchOutputFormat.Bmp => new BmpEncoder(),
+            BatchOutputFormat.Tiff => new TiffEncoder(),
             _ => new JpegEncoder
             {
                 Quality = clampedQuality

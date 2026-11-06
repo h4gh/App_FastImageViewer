@@ -27,8 +27,10 @@ Navržený s důrazem na **okamžitý start z Průzkumníku Windows**, čistý b
 * **💾 Volitelný režim ukládání úprav (`U`):**
   * Kdykoliv lze přepnout mezi automatickým ukládáním se sufixem (`_rotated` / `_cropped`) bez zdržování a klasickým systémovým dialogem *„Uložit jako…“*.
 * **⚙️ Vícevláknová dávková konverze a změna rozměrů (`B` / `F3`):**
-  * Hromadný převod vybraných fotek nebo celé složky (včetně *Drag & Drop*) do formátů `JPG`, `PNG` nebo `WEBP`.
+  * Hromadný převod vybraných fotek nebo celé složky (včetně *Drag & Drop*) do formátů `JPG`, `PNG`, `WEBP`, `BMP` nebo `TIFF`.
   * Nastavení kvality komprese (1–100 %) a změna rozměrů se zachováním poměru stran (předvolby delší strany v px: `3840`, `2560`, `1920`, `1600`, `1280`, `800` nebo procenta: `20 %`, `40 %`, `50 %`, `60 %`, `80 %`, případně vlastní hodnota).
+* **🖼️ Široká podpora formátů (13 přípon):**
+  * `JPG`, `JPEG`, `JFIF`, `PNG`, `WEBP`, `GIF`, `BMP`, `TIF`, `TIFF`, `ICO`, `HEIC`, `HEIF`, `AVIF`.
 * **📁 Blesková správa souborů:**
   * **Kopírování (`C`):** Rychlý dialog s předvyplněnou poslední cílovou složkou (stačí stisknout `C` a `Enter`).
   * **Mazání (`Delete`):** Tichý přesun aktuální fotky přímo do **Koše Windows** a okamžitý přechod na další snímek.

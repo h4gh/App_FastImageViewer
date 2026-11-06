@@ -79,8 +79,10 @@ public static class ImageTransformService
             {
                 BitmapEncoder encoder = ext switch
                 {
-                    ".png" => new PngBitmapEncoder(),
+                    ".png" or ".ico" => new PngBitmapEncoder(),
                     ".gif" => new GifBitmapEncoder(),
+                    ".bmp" => new BmpBitmapEncoder(),
+                    ".tif" or ".tiff" => new TiffBitmapEncoder(),
                     _ => new JpegBitmapEncoder { QualityLevel = Math.Clamp(quality, 1, 100) }
                 };
 
