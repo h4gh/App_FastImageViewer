@@ -730,6 +730,10 @@
                             Tag="Enter / Esc"
                             Click="FlyoutOverviewButton_Click" />
                     <Button Style="{StaticResource FlyoutMenuButtonStyle}"
+                            Content="📊 EXIF a detaily fotky"
+                            Tag="I"
+                            Click="FlyoutExifPanelButton_Click" />
+                    <Button Style="{StaticResource FlyoutMenuButtonStyle}"
                             Content="📂 Otevřít soubor..."
                             Tag="O"
                             Click="OpenFileButton_Click" />
@@ -857,6 +861,320 @@
                             Content="✕ Ukončit prohlížeč"
                             Tag="Esc"
                             Click="CloseButton_Click" />
+                </StackPanel>
+            </Border>
+
+            <!-- ==================== RIGHT-EDGE AUTO-HIDE EXIF & FILE DETAILS PANEL ==================== -->
+            <Border x:Name="RightExifPanel"
+                    Width="352"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Background="#F418181B"
+                    BorderBrush="#3B82F6"
+                    BorderThickness="1,1,0,1"
+                    CornerRadius="10,0,0,10"
+                    Padding="12,10,12,12"
+                    Visibility="Collapsed"
+                    MouseLeave="RightExifPanel_MouseLeave"
+                    PreviewMouseWheel="RightExifPanel_PreviewMouseWheel">
+                <StackPanel>
+                    <!-- Panel Header -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="📊 SOUBOR A EXIF (I)"
+                                   Foreground="#60A5FA"
+                                   FontSize="11.5"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+
+                        <Button Grid.Column="1"
+                                Style="{StaticResource FilmstripNavButtonStyle}"
+                                Content="📋 Souhrn"
+                                ToolTip="Zkopírovat souhrn parametrů fotky a EXIF do schránky"
+                                Padding="7,3"
+                                FontSize="11"
+                                Margin="0,0,5,0"
+                                Click="ExifCopySummaryButton_Click" />
+
+                        <Button x:Name="RightExifPinButton"
+                                Grid.Column="2"
+                                Style="{StaticResource FilmstripNavButtonStyle}"
+                                Content="📌 Připnout"
+                                ToolTip="Připnout pravý EXIF panel natrvalo (nebo klávesa I)"
+                                Padding="7,3"
+                                FontSize="11"
+                                Click="RightExifPinButton_Click" />
+                    </Grid>
+
+                    <!-- Section 1: File and Attributes -->
+                    <Border Background="#212229"
+                            BorderBrush="#2E303B"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="10,8"
+                            Margin="0,0,0,6">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="ExifFileNameText"
+                                           Grid.Column="0"
+                                           Text="Obrázek"
+                                           Foreground="#F3F4F6"
+                                           FontWeight="SemiBold"
+                                           FontSize="12.5"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                                <Button Grid.Column="1"
+                                        Style="{StaticResource FilmstripNavButtonStyle}"
+                                        Content="📋"
+                                        ToolTip="Zkopírovat celou cestu k souboru"
+                                        Padding="6,2"
+                                        FontSize="11"
+                                        Margin="6,0,0,0"
+                                        Click="ExifCopyPathButton_Click" />
+                            </Grid>
+
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="ExifLocationText"
+                                           Grid.Column="0"
+                                           Text="—"
+                                           Foreground="#9CA3AF"
+                                           FontSize="11"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                                <Button Grid.Column="1"
+                                        Style="{StaticResource FilmstripNavButtonStyle}"
+                                        Content="📂 Průzkumník"
+                                        ToolTip="Ukázat soubor v Průzkumníku Windows"
+                                        Padding="6,2"
+                                        FontSize="11"
+                                        Margin="6,0,0,0"
+                                        Click="ExifOpenExplorerButton_Click" />
+                            </Grid>
+
+                            <Separator Background="#2D2F3A" Margin="0,0,0,5" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="72" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Typ:" Foreground="#8B92A1" FontSize="11" Margin="0,1" />
+                                <TextBlock x:Name="ExifFileTypeText" Grid.Row="0" Grid.Column="1" Text="—" Foreground="#E5E7EB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Velikost:" Foreground="#8B92A1" FontSize="11" Margin="0,1" />
+                                <TextBlock x:Name="ExifFileSizeText" Grid.Row="1" Grid.Column="1" Text="—" Foreground="#E5E7EB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1" />
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Změněno:" Foreground="#8B92A1" FontSize="11" Margin="0,1" />
+                                <TextBlock x:Name="ExifFileDateText" Grid.Row="2" Grid.Column="1" Text="—" Foreground="#E5E7EB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1" />
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Rozměry:" Foreground="#8B92A1" FontSize="11" Margin="0,1" />
+                                <TextBlock x:Name="ExifDimensionsText" Grid.Row="3" Grid.Column="1" Text="—" Foreground="#93C5FD" FontWeight="SemiBold" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1" />
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Tisk / DPI:" Foreground="#8B92A1" FontSize="11" Margin="0,1" />
+                                <TextBlock x:Name="ExifPrintSizeText" Grid.Row="4" Grid.Column="1" Text="—" Foreground="#D1D5DB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Section 2: Quick Photo Summary -->
+                    <Border x:Name="ExifQuickSummaryBorder"
+                            Background="#1E293B"
+                            BorderBrush="#3B82F6"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="8,5"
+                            Margin="0,0,0,6"
+                            Visibility="Collapsed">
+                        <TextBlock x:Name="ExifQuickSummaryText"
+                                   Foreground="#93C5FD"
+                                   FontWeight="SemiBold"
+                                   FontSize="11.5"
+                                   FontFamily="Consolas"
+                                   HorizontalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" />
+                    </Border>
+
+                    <!-- Section 3: EXIF Table -->
+                    <Border Background="#1B1C22"
+                            BorderBrush="#2A2D38"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="9,6"
+                            Margin="0,0,0,6">
+                        <StackPanel>
+                            <!-- Planned future tab next to EXIF: Live RGB / Luminance Histogram -->
+                            <Border BorderBrush="#2A2D38" BorderThickness="0,0,0,1" Padding="0,0,0,5" Margin="0,0,0,4">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Background="#263B5E" BorderBrush="#3B82F6" BorderThickness="1" CornerRadius="4" Padding="8,2">
+                                        <TextBlock Text="EXIF" Foreground="#93C5FD" FontSize="11" FontWeight="SemiBold" />
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <ScrollViewer MaxHeight="340" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="118" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Výrobce" Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifMakeText" Grid.Row="0" Grid.Column="1" Text="—" Foreground="#F3F4F6" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Fotoaparát / Model" Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifModelText" Grid.Row="1" Grid.Column="1" Text="—" Foreground="#F3F4F6" FontWeight="SemiBold" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Objektiv" Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifLensText" Grid.Row="2" Grid.Column="1" Text="—" Foreground="#E5E7EB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Software" Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifSoftwareText" Grid.Row="3" Grid.Column="1" Text="—" Foreground="#D1D5DB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Datum pořízení" Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifDateTakenText" Grid.Row="4" Grid.Column="1" Text="—" Foreground="#F3F4F6" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+
+                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Čas expozice" Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifExposureTimeText" Grid.Row="5" Grid.Column="1" Text="—" Foreground="#E5E7EB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+
+                                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Clona" Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifFNumberText" Grid.Row="6" Grid.Column="1" Text="—" Foreground="#E5E7EB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+
+                                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Citlivost (ISO)" Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifIsoText" Grid.Row="7" Grid.Column="1" Text="—" Foreground="#E5E7EB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+
+                                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Expoziční program" Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifExposureProgramText" Grid.Row="8" Grid.Column="1" Text="—" Foreground="#D1D5DB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+
+                                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Měření expozice" Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifMeteringModeText" Grid.Row="9" Grid.Column="1" Text="—" Foreground="#D1D5DB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+
+                                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Kompenzace EV" Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifExposureBiasText" Grid.Row="10" Grid.Column="1" Text="—" Foreground="#D1D5DB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+
+                                    <TextBlock Grid.Row="11" Grid.Column="0" Text="Blesk" Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifFlashText" Grid.Row="11" Grid.Column="1" Text="—" Foreground="#D1D5DB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+
+                                    <TextBlock Grid.Row="12" Grid.Column="0" Text="Ohnisková vzdál." Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifFocalLengthText" Grid.Row="12" Grid.Column="1" Text="—" Foreground="#E5E7EB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+
+                                    <TextBlock Grid.Row="13" Grid.Column="0" Text="Ekvivalent 35 mm" Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifFocal35mmText" Grid.Row="13" Grid.Column="1" Text="—" Foreground="#E5E7EB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+
+                                    <TextBlock Grid.Row="14" Grid.Column="0" Text="Vyvážení / Barvy" Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifWhiteBalanceColorText" Grid.Row="14" Grid.Column="1" Text="—" Foreground="#D1D5DB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+
+                                    <TextBlock Grid.Row="15" Grid.Column="0" Text="Orientace (EXIF)" Foreground="#8B92A1" FontSize="11" Margin="0,1.5" />
+                                    <TextBlock x:Name="ExifOrientationText" Grid.Row="15" Grid.Column="1" Text="—" Foreground="#D1D5DB" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,1.5" />
+                                </Grid>
+                            </ScrollViewer>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Section 4: GPS Location & Map Links -->
+                    <Border x:Name="ExifGpsBorder"
+                            Background="#1F242D"
+                            BorderBrush="#2E3748"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="9,7">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="📍 GPS:"
+                                           Foreground="#9CA3AF"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Margin="0,0,8,0"
+                                           VerticalAlignment="Center" />
+                                <TextBlock x:Name="ExifGpsCoordsText"
+                                           Grid.Column="1"
+                                           Text="Bez GPS souřadnic"
+                                           Foreground="#E5E7EB"
+                                           FontSize="11"
+                                           FontFamily="Consolas"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+
+                            <StackPanel x:Name="ExifGpsActionsPanel"
+                                        Orientation="Horizontal"
+                                        Margin="0,6,0,0"
+                                        Visibility="Collapsed">
+                                <Button Style="{StaticResource FilmstripNavButtonStyle}"
+                                        Content="🗺️ Mapy.cz"
+                                        ToolTip="Otevřít místo na Mapy.cz"
+                                        Background="#1A3A2A"
+                                        BorderBrush="#22C55E"
+                                        Foreground="#86EFAC"
+                                        FontWeight="SemiBold"
+                                        Padding="8,3.5"
+                                        FontSize="11"
+                                        Margin="0,0,6,0"
+                                        Click="ExifOpenMapyCzButton_Click" />
+                                <Button Style="{StaticResource FilmstripNavButtonStyle}"
+                                        Content="🌍 Google Maps"
+                                        ToolTip="Otevřít místo na Google Maps"
+                                        Background="#1E3252"
+                                        BorderBrush="#3B82F6"
+                                        Foreground="#93C5FD"
+                                        FontWeight="SemiBold"
+                                        Padding="8,3.5"
+                                        FontSize="11"
+                                        Margin="0,0,6,0"
+                                        Click="ExifOpenGoogleMapsButton_Click" />
+                                <Button Style="{StaticResource FilmstripNavButtonStyle}"
+                                        Content="📋 Kopírovat"
+                                        ToolTip="Zkopírovat GPS souřadnice do schránky"
+                                        Padding="8,3.5"
+                                        FontSize="11"
+                                        Click="ExifCopyGpsButton_Click" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Border>
 
@@ -1143,7 +1461,7 @@
                                 Margin="8,0,0,0"
                                 VerticalAlignment="Center">
                             <TextBlock x:Name="AppVersionText"
-                                       Text="v1.1.0"
+                                       Text="v1.2.0"
                                        Foreground="#9CA3AF"
                                        FontSize="11"
                                        FontFamily="Consolas" />

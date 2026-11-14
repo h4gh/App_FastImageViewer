@@ -24,6 +24,7 @@ public sealed class AppSettings
     public string? LastRunVersion { get; set; }
     public ImageSortMode SortMode { get; set; } = ImageSortMode.NameAsc;
     public bool PinTopFilmstrip { get; set; } = false;
+    public bool PinRightExifPanel { get; set; } = false;
     public int FilmstripScalePercent { get; set; } = 100;
 }
 

@@ -29,6 +29,7 @@ public partial class MainWindow : Window
     private static readonly int[] FilmstripScaleSteps = [75, 90, 100, 115, 125, 150, 175, 200];
     private long _totalFolderBytes;
     private AppSettings _settings;
+    private PhotoDetailedMetadata? _currentMetadata;
 
     private string _currentFolder = string.Empty;
     private int _currentIndex = -1;
@@ -86,7 +87,7 @@ public partial class MainWindow : Window
         _settings = AppSettingsService.Load();
 
         var asmVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-        string versionStr = asmVersion != null ? $"v{asmVersion.Major}.{asmVersion.Minor}.{asmVersion.Build}" : "v1.1.0";
+        string versionStr = asmVersion != null ? $"v{asmVersion.Major}.{asmVersion.Minor}.{asmVersion.Build}" : "v1.2.0";
         AppVersionText.Text = versionStr;
         Title = $"FastImageViewer {versionStr}";
 
@@ -107,6 +108,7 @@ public partial class MainWindow : Window
         _isSyncingSortCombo = false;
 
         UpdateFilmstripPinButtonUI();
+        UpdateRightExifPinButtonUI();
         ApplyFilmstripScale(_settings.FilmstripScalePercent, saveSetting: false);
         UpdateWheelModeButtonText();
         UpdateEditSaveModeButtonText();
@@ -197,6 +199,7 @@ public partial class MainWindow : Window
                 OverviewPreviewImage.Source = null;
                 OverviewPreviewMetaText.Text = string.Empty;
                 TopFilmstripPanel.Visibility = Visibility.Collapsed;
+                RightExifPanel.Visibility = Visibility.Collapsed;
                 EmptyStatePanel.Visibility = Visibility.Visible;
                 ThumbnailListBox.Visibility = Visibility.Collapsed;
                 UpdateFilmstripNavigationButtons();
@@ -529,10 +532,14 @@ public partial class MainWindow : Window
             return;
 
         if (e.OriginalSource is DependencyObject dep &&
-            (IsDescendantOf(dep, LeftFlyoutPanel) || IsDescendantOf(dep, TopFilmstripPanel)))
+            (IsDescendantOf(dep, LeftFlyoutPanel) || IsDescendantOf(dep, RightExifPanel) || IsDescendantOf(dep, TopFilmstripPanel)))
             return;
 
         LeftFlyoutPanel.Visibility = Visibility.Collapsed;
+        if (!_settings.PinRightExifPanel)
+        {
+            RightExifPanel.Visibility = Visibility.Collapsed;
+        }
         if (!_settings.PinTopFilmstrip)
         {
             TopFilmstripPanel.Visibility = Visibility.Collapsed;
@@ -580,6 +587,8 @@ public partial class MainWindow : Window
 
         if (!_isMagnifierActive && !_isPanning)
         {
+            var (vw, _) = GetViewportSize();
+
             // Show TopFilmstripPanel when mouse approaches the top edge of the screen (<= 14 px)
             if (currentPos.Y <= 14)
             {
@@ -593,6 +602,7 @@ public partial class MainWindow : Window
             {
                 if (!TopFilmstripPanel.IsMouseOver &&
                     !FilmstripSortComboBox.IsDropDownOpen &&
+                    !FilmstripSizeComboBox.IsDropDownOpen &&
                     currentPos.Y > TopFilmstripPanel.ActualHeight + 14)
                 {
                     TopFilmstripPanel.Visibility = Visibility.Collapsed;
@@ -612,6 +622,23 @@ public partial class MainWindow : Window
                 if (!LeftFlyoutPanel.IsMouseOver && currentPos.X > LeftFlyoutPanel.ActualWidth + 14)
                 {
                     LeftFlyoutPanel.Visibility = Visibility.Collapsed;
+                }
+            }
+
+            // Show RightExifPanel when mouse approaches the right edge of the screen (>= vw - 14)
+            if (currentPos.X >= vw - 14 && (TopFilmstripPanel.Visibility != Visibility.Visible || currentPos.Y > TopFilmstripPanel.ActualHeight))
+            {
+                if (RightExifPanel.Visibility != Visibility.Visible)
+                {
+                    RightExifPanel.Visibility = Visibility.Visible;
+                    UpdateRightExifPanel();
+                }
+            }
+            else if (RightExifPanel.Visibility == Visibility.Visible && !_settings.PinRightExifPanel)
+            {
+                if (!RightExifPanel.IsMouseOver && currentPos.X < vw - RightExifPanel.ActualWidth - 14)
+                {
+                    RightExifPanel.Visibility = Visibility.Collapsed;
                 }
             }
             return;
@@ -1109,6 +1136,314 @@ public partial class MainWindow : Window
         }
     }
 
+    // ==================== RIGHT-EDGE EXIF & DETAILS PANEL HANDLERS ====================
+
+    private void UpdateRightExifPanel()
+    {
+        if (RightExifPanel == null)
+            return;
+
+        if (_items.Count == 0 || _currentIndex < 0 || _currentIndex >= _items.Count)
+        {
+            _currentMetadata = null;
+            ExifFileNameText.Text = "Žádný obrázek";
+            ExifLocationText.Text = "—";
+            ExifFileTypeText.Text = "—";
+            ExifFileSizeText.Text = "—";
+            ExifFileDateText.Text = "—";
+            ExifDimensionsText.Text = "—";
+            ExifPrintSizeText.Text = "—";
+            ExifQuickSummaryBorder.Visibility = Visibility.Collapsed;
+            ExifQuickSummaryText.Text = string.Empty;
+
+            ExifMakeText.Text = "—";
+            ExifModelText.Text = "—";
+            ExifLensText.Text = "—";
+            ExifSoftwareText.Text = "—";
+            ExifDateTakenText.Text = "—";
+            ExifExposureTimeText.Text = "—";
+            ExifFNumberText.Text = "—";
+            ExifIsoText.Text = "—";
+            ExifExposureProgramText.Text = "—";
+            ExifMeteringModeText.Text = "—";
+            ExifExposureBiasText.Text = "—";
+            ExifFlashText.Text = "—";
+            ExifFocalLengthText.Text = "—";
+            ExifFocal35mmText.Text = "—";
+            ExifWhiteBalanceColorText.Text = "—";
+            ExifOrientationText.Text = "—";
+
+            ExifGpsCoordsText.Text = "Bez GPS souřadnic";
+            ExifGpsCoordsText.Foreground = new SolidColorBrush(Color.FromRgb(0x9C, 0xA3, 0xAF));
+            ExifGpsActionsPanel.Visibility = Visibility.Collapsed;
+            ExifGpsBorder.Background = new SolidColorBrush(Color.FromRgb(0x1F, 0x24, 0x2D));
+            ExifGpsBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0x2E, 0x37, 0x48));
+            return;
+        }
+
+        var current = _items[_currentIndex];
+        var bmp = FullscreenImage.Source as BitmapSource;
+        PhotoDetailedMetadata meta = ExifMetadataService.GetMetadata(
+            current.FilePath,
+            bmp?.PixelWidth ?? 0,
+            bmp?.PixelHeight ?? 0);
+        _currentMetadata = meta;
+
+        ExifFileNameText.Text = meta.FileName;
+        ExifFileNameText.ToolTip = meta.FilePath;
+        ExifLocationText.Text = meta.FolderPath;
+        ExifLocationText.ToolTip = meta.FolderPath;
+        ExifFileTypeText.Text = meta.FileTypeDescription;
+        ExifFileSizeText.Text = meta.FileSizeFormatted;
+        ExifFileDateText.Text = meta.FileDateFormatted;
+        ExifDimensionsText.Text = meta.DimensionsAndMpFormatted;
+        ExifPrintSizeText.Text = meta.PrintSizeAndDpiFormatted;
+
+        if (!string.IsNullOrWhiteSpace(meta.QuickSummaryText))
+        {
+            ExifQuickSummaryText.Text = meta.QuickSummaryText;
+            ExifQuickSummaryBorder.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            ExifQuickSummaryText.Text = string.Empty;
+            ExifQuickSummaryBorder.Visibility = Visibility.Collapsed;
+        }
+
+        ExifMakeText.Text = meta.Make;
+        ExifModelText.Text = meta.Model;
+        ExifLensText.Text = meta.LensModel;
+        ExifSoftwareText.Text = meta.Software;
+        ExifDateTakenText.Text = meta.DateTaken;
+        ExifExposureTimeText.Text = meta.ExposureTime;
+        ExifFNumberText.Text = meta.FNumber;
+        ExifIsoText.Text = meta.IsoSpeed;
+        ExifExposureProgramText.Text = meta.ExposureProgram;
+        ExifMeteringModeText.Text = meta.MeteringMode;
+        ExifExposureBiasText.Text = meta.ExposureBias;
+        ExifFlashText.Text = meta.Flash;
+        ExifFocalLengthText.Text = meta.FocalLength;
+        ExifFocal35mmText.Text = meta.FocalLength35mm;
+        ExifWhiteBalanceColorText.Text = meta.WhiteBalanceAndColorSpace;
+        ExifOrientationText.Text = meta.OrientationText;
+
+        ExifGpsCoordsText.Text = meta.GpsDisplayText;
+        if (meta.HasGps)
+        {
+            ExifGpsCoordsText.Foreground = new SolidColorBrush(Color.FromRgb(0x86, 0xEF, 0xAC));
+            ExifGpsActionsPanel.Visibility = Visibility.Visible;
+            ExifGpsBorder.Background = new SolidColorBrush(Color.FromRgb(0x16, 0x26, 0x21));
+            ExifGpsBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E));
+        }
+        else
+        {
+            ExifGpsCoordsText.Foreground = new SolidColorBrush(Color.FromRgb(0x9C, 0xA3, 0xAF));
+            ExifGpsActionsPanel.Visibility = Visibility.Collapsed;
+            ExifGpsBorder.Background = new SolidColorBrush(Color.FromRgb(0x1F, 0x24, 0x2D));
+            ExifGpsBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0x2E, 0x37, 0x48));
+        }
+    }
+
+    private void UpdateRightExifPinButtonUI()
+    {
+        if (RightExifPinButton == null)
+            return;
+
+        if (_settings.PinRightExifPanel)
+        {
+            RightExifPinButton.Content = "📌 Připnuto";
+            RightExifPinButton.Background = new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6));
+            RightExifPinButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x60, 0xA5, 0xFA));
+            RightExifPinButton.Foreground = Brushes.White;
+        }
+        else
+        {
+            RightExifPinButton.Content = "📌 Připnout";
+            RightExifPinButton.Background = new SolidColorBrush(Color.FromRgb(0x27, 0x29, 0x32));
+            RightExifPinButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x38, 0x3C, 0x4A));
+            RightExifPinButton.Foreground = new SolidColorBrush(Color.FromRgb(0xF3, 0xF4, 0xF6));
+        }
+    }
+
+    private void ToggleRightExifPanel()
+    {
+        if (RightExifPanel.Visibility == Visibility.Visible)
+        {
+            _settings.PinRightExifPanel = false;
+            AppSettingsService.Save(_settings);
+            UpdateRightExifPinButtonUI();
+            RightExifPanel.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            _settings.PinRightExifPanel = true;
+            AppSettingsService.Save(_settings);
+            UpdateRightExifPinButtonUI();
+            RightExifPanel.Visibility = Visibility.Visible;
+            UpdateRightExifPanel();
+        }
+    }
+
+    private void RightExifPanel_MouseLeave(object sender, MouseEventArgs e)
+    {
+        if (_settings.PinRightExifPanel)
+            return;
+
+        var (vw, _) = GetViewportSize();
+        Point pos = e.GetPosition(FullscreenViewGrid);
+        if (pos.X < vw - RightExifPanel.ActualWidth - 6 || !RightExifPanel.IsMouseOver)
+        {
+            RightExifPanel.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void RightExifPanel_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+            return;
+
+        e.Handled = true;
+        if (_items.Count == 0)
+            return;
+
+        if (e.Delta < 0 && _currentIndex < _items.Count - 1)
+        {
+            SetCurrentIndex(_currentIndex + 1);
+        }
+        else if (e.Delta > 0 && _currentIndex > 0)
+        {
+            SetCurrentIndex(_currentIndex - 1);
+        }
+    }
+
+    private void RightExifPinButton_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.PinRightExifPanel = !_settings.PinRightExifPanel;
+        AppSettingsService.Save(_settings);
+        UpdateRightExifPinButtonUI();
+
+        if (_settings.PinRightExifPanel)
+        {
+            RightExifPanel.Visibility = Visibility.Visible;
+            UpdateRightExifPanel();
+            ShowToast("📌 Pravý EXIF panel připnut");
+        }
+        else
+        {
+            ShowToast("📌 Pravý EXIF panel uvolněn (auto-schování)");
+        }
+    }
+
+    private void FlyoutExifPanelButton_Click(object sender, RoutedEventArgs e)
+    {
+        LeftFlyoutPanel.Visibility = Visibility.Collapsed;
+        ToggleRightExifPanel();
+    }
+
+    private void ExifCopyPathButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentMetadata != null && !string.IsNullOrWhiteSpace(_currentMetadata.FilePath))
+        {
+            TryCopyToClipboard(_currentMetadata.FilePath, "📋 Cesta k souboru zkopírována do schránky");
+        }
+    }
+
+    private void ExifCopySummaryButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentMetadata == null)
+            return;
+
+        var m = _currentMetadata;
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"Soubor: {m.FileName}");
+        sb.AppendLine($"Cesta: {m.FilePath}");
+        sb.AppendLine($"Typ: {m.FileTypeDescription}");
+        sb.AppendLine($"Velikost: {m.FileSizeFormatted}");
+        sb.AppendLine($"Datum souboru: {m.FileDateFormatted}");
+        sb.AppendLine($"Rozměry: {m.DimensionsAndMpFormatted}");
+        sb.AppendLine($"Tisk / DPI: {m.PrintSizeAndDpiFormatted}");
+        sb.AppendLine($"Fotoaparát: {m.Make} {m.Model}".Trim());
+        if (m.LensModel != "—") sb.AppendLine($"Objektiv: {m.LensModel}");
+        if (m.DateTaken != "—") sb.AppendLine($"Datum pořízení: {m.DateTaken}");
+        if (!string.IsNullOrWhiteSpace(m.QuickSummaryText)) sb.AppendLine($"Expozice: {m.QuickSummaryText}");
+        if (m.HasGps) sb.AppendLine($"GPS: {m.GpsDisplayText} ({m.GoogleMapsUrl})");
+
+        TryCopyToClipboard(sb.ToString().TrimEnd(), "📋 Souhrn EXIF zkopírován do schránky");
+    }
+
+    private void ExifOpenExplorerButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentMetadata == null || string.IsNullOrWhiteSpace(_currentMetadata.FilePath) || !File.Exists(_currentMetadata.FilePath))
+            return;
+
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"/select,\"{_currentMetadata.FilePath}\"",
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Nelze otevřít Průzkumník: {ex.Message}");
+        }
+    }
+
+    private void ExifOpenMapyCzButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentMetadata is { HasGps: true } && !string.IsNullOrWhiteSpace(_currentMetadata.MapyCzUrl))
+        {
+            OpenExternalUrl(_currentMetadata.MapyCzUrl);
+        }
+    }
+
+    private void ExifOpenGoogleMapsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentMetadata is { HasGps: true } && !string.IsNullOrWhiteSpace(_currentMetadata.GoogleMapsUrl))
+        {
+            OpenExternalUrl(_currentMetadata.GoogleMapsUrl);
+        }
+    }
+
+    private void ExifCopyGpsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentMetadata is { HasGps: true } && !string.IsNullOrWhiteSpace(_currentMetadata.GpsClipboardText))
+        {
+            TryCopyToClipboard(_currentMetadata.GpsClipboardText, $"📍 Souřadnice {_currentMetadata.GpsClipboardText} zkopírovány");
+        }
+    }
+
+    private void OpenExternalUrl(string url)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Nelze otevřít prohlížeč: {ex.Message}");
+        }
+    }
+
+    private void TryCopyToClipboard(string text, string successToast)
+    {
+        try
+        {
+            Clipboard.SetText(text);
+            ShowToast(successToast);
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Chyba schránky: {ex.Message}");
+        }
+    }
+
     // ==================== LEFT-EDGE FLYOUT PANEL HANDLERS ====================
 
     private void LeftFlyoutPanel_MouseLeave(object sender, MouseEventArgs e)
@@ -1370,6 +1705,7 @@ public partial class MainWindow : Window
 
         EndMagnifierOrPan();
         LeftFlyoutPanel.Visibility = Visibility.Collapsed;
+        RightExifPanel.Visibility = Visibility.Collapsed;
         TopFilmstripPanel.Visibility = Visibility.Collapsed;
         _isCropMode = true;
         _hasCropSelection = false;
@@ -1405,6 +1741,11 @@ public partial class MainWindow : Window
         if (_settings.PinTopFilmstrip && !_isOverviewMode && _items.Count > 0)
         {
             TopFilmstripPanel.Visibility = Visibility.Visible;
+        }
+        if (_settings.PinRightExifPanel && !_isOverviewMode && _items.Count > 0)
+        {
+            RightExifPanel.Visibility = Visibility.Visible;
+            UpdateRightExifPanel();
         }
     }
 
@@ -2004,6 +2345,7 @@ public partial class MainWindow : Window
         if (_isOverviewMode)
         {
             TopFilmstripPanel.Visibility = Visibility.Collapsed;
+            RightExifPanel.Visibility = Visibility.Collapsed;
             FullscreenViewGrid.Visibility = Visibility.Collapsed;
             OverviewGrid.Visibility = Visibility.Visible;
             OverviewGrid.UpdateLayout();
@@ -2057,6 +2399,16 @@ public partial class MainWindow : Window
                 TopFilmstripPanel.Visibility = Visibility.Collapsed;
             }
 
+            if (_settings.PinRightExifPanel)
+            {
+                RightExifPanel.Visibility = Visibility.Visible;
+                UpdateRightExifPanel();
+            }
+            else
+            {
+                RightExifPanel.Visibility = Visibility.Collapsed;
+            }
+
             Focus();
         }
     }
@@ -2071,6 +2423,10 @@ public partial class MainWindow : Window
             OverviewPreviewMetaText.Text = string.Empty;
             FilmstripCounterText.Text = "0 / 0 fotek";
             FilmstripResolutionText.Text = string.Empty;
+            if (RightExifPanel.Visibility == Visibility.Visible)
+            {
+                UpdateRightExifPanel();
+            }
             return;
         }
 
@@ -2117,6 +2473,10 @@ public partial class MainWindow : Window
         FilmstripResolutionText.Text = current.FileName
             + (string.IsNullOrEmpty(compactRes) ? "" : $"  •  {compactRes}")
             + (string.IsNullOrEmpty(compactSize) ? "" : $"  •  {compactSize}");
+        if (RightExifPanel.Visibility == Visibility.Visible)
+        {
+            UpdateRightExifPanel();
+        }
     }
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -2205,6 +2565,15 @@ public partial class MainWindow : Window
                             ExitCropMode();
                         else
                             EnterCropMode();
+                        return;
+                    }
+                    break;
+
+                case Key.I:
+                    if (!_isOverviewMode && !_isCropMode && _items.Count > 0)
+                    {
+                        e.Handled = true;
+                        ToggleRightExifPanel();
                         return;
                     }
                     break;
