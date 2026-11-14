@@ -58,7 +58,7 @@ public sealed class ImageCacheService
     };
 
     private const int MaxCacheSize = 9;
-    private const int ThumbnailDecodeWidth = 220;
+    private const int ThumbnailDecodeWidth = 320;
 
     private readonly object _cacheLock = new();
     private readonly Dictionary<string, BitmapSource> _fullImageCache = new(StringComparer.OrdinalIgnoreCase);
@@ -115,7 +115,7 @@ public sealed class ImageCacheService
         {
             try
             {
-                var loaded = DecodeImageFromFile(path, decodeWidth: null);
+                var loaded = DecodeImageFromFile(path, decodeWidth: null, out _);
                 if (loaded != null)
                 {
                     AddToCache(path, loaded);
@@ -164,7 +164,11 @@ public sealed class ImageCacheService
                 if (cancellationToken.IsCancellationRequested)
                     return;
 
-                var thumb = DecodeImageFromFile(item.FilePath, ThumbnailDecodeWidth);
+                var thumb = DecodeImageFromFile(item.FilePath, ThumbnailDecodeWidth, out string? dimensionsText);
+                if (!string.IsNullOrEmpty(dimensionsText))
+                {
+                    item.DimensionsText = dimensionsText;
+                }
                 if (thumb != null)
                 {
                     item.Thumbnail = thumb;
@@ -237,10 +241,11 @@ public sealed class ImageCacheService
         _lruOrder.AddFirst(filePath);
     }
 
-    public static BitmapSource? DecodeFullBitmap(string filePath) => DecodeImageFromFile(filePath, decodeWidth: null);
+    public static BitmapSource? DecodeFullBitmap(string filePath) => DecodeImageFromFile(filePath, decodeWidth: null, out _);
 
-    private static BitmapSource? DecodeImageFromFile(string filePath, int? decodeWidth)
+    private static BitmapSource? DecodeImageFromFile(string filePath, int? decodeWidth, out string? dimensionsText)
     {
+        dimensionsText = null;
         if (!File.Exists(filePath))
             return null;
 
@@ -267,6 +272,7 @@ public sealed class ImageCacheService
                 if (bestFrame != null)
                 {
                     bestFrame.Freeze();
+                    dimensionsText = $"{bestFrame.PixelWidth}×{bestFrame.PixelHeight}";
                     return bestFrame;
                 }
             }
@@ -278,7 +284,11 @@ public sealed class ImageCacheService
 
         try
         {
-            ushort orientation = ReadExifOrientation(bytes);
+            var (orientation, origWidth, origHeight) = ReadImageHeaderMetadata(bytes);
+            if (origWidth > 0 && origHeight > 0)
+            {
+                dimensionsText = $"{origWidth}×{origHeight}";
+            }
 
             using var ms = new MemoryStream(bytes);
             var bitmap = new BitmapImage();
@@ -297,7 +307,16 @@ public sealed class ImageCacheService
             {
                 var transformed = ApplyExifOrientation(bitmap, orientation);
                 transformed.Freeze();
+                if (dimensionsText == null)
+                {
+                    dimensionsText = $"{transformed.PixelWidth}×{transformed.PixelHeight}";
+                }
                 return transformed;
+            }
+
+            if (dimensionsText == null && !decodeWidth.HasValue)
+            {
+                dimensionsText = $"{bitmap.PixelWidth}×{bitmap.PixelHeight}";
             }
 
             return bitmap;
@@ -309,6 +328,11 @@ public sealed class ImageCacheService
             {
                 using var img = Image.Load<Bgra32>(bytes);
                 img.Mutate(x => x.AutoOrient());
+                if (img.Width > 0 && img.Height > 0)
+                {
+                    dimensionsText = $"{img.Width}×{img.Height}";
+                }
+
                 if (decodeWidth.HasValue && img.Width > decodeWidth.Value)
                 {
                     int targetW = decodeWidth.Value;
@@ -333,19 +357,31 @@ public sealed class ImageCacheService
         }
     }
 
-    private static ushort ReadExifOrientation(byte[] bytes)
+    private static (ushort Orientation, int Width, int Height) ReadImageHeaderMetadata(byte[] bytes)
     {
+        ushort orientation = 1;
+        int width = 0;
+        int height = 0;
         try
         {
             using var ms = new MemoryStream(bytes);
             var decoder = BitmapDecoder.Create(ms, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
-            if (decoder.Frames.Count > 0 && decoder.Frames[0].Metadata is BitmapMetadata metadata)
+            if (decoder.Frames.Count > 0)
             {
-                if (metadata.ContainsQuery("System.Photo.Orientation"))
+                var frame = decoder.Frames[0];
+                width = frame.PixelWidth;
+                height = frame.PixelHeight;
+
+                if (frame.Metadata is BitmapMetadata metadata && metadata.ContainsQuery("System.Photo.Orientation"))
                 {
                     object? val = metadata.GetQuery("System.Photo.Orientation");
                     if (val is ushort u)
-                        return u;
+                        orientation = u;
+                }
+
+                if (orientation is 5 or 6 or 7 or 8)
+                {
+                    (width, height) = (height, width);
                 }
             }
         }
@@ -353,7 +389,7 @@ public sealed class ImageCacheService
         {
             // Ignore metadata errors (e.g. formats without EXIF)
         }
-        return 1;
+        return (orientation, width, height);
     }
 
     private static BitmapSource ApplyExifOrientation(BitmapSource source, ushort orientation)

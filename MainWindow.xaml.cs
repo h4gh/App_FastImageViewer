@@ -23,6 +23,11 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<ImageItem> _items = [];
     private readonly ObservableCollection<FolderNode> _rootFolderNodes = [];
     private bool _isSyncingFolderTree;
+    private bool _isSyncingSortCombo;
+    private bool _isSyncingFilmstripSizeCombo;
+    private bool _isSortingItems;
+    private static readonly int[] FilmstripScaleSteps = [75, 90, 100, 115, 125, 150, 175, 200];
+    private long _totalFolderBytes;
     private AppSettings _settings;
 
     private string _currentFolder = string.Empty;
@@ -76,11 +81,12 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         ThumbnailListBox.ItemsSource = _items;
+        FilmstripListBox.ItemsSource = _items;
         FolderTreeView.ItemsSource = _rootFolderNodes;
         _settings = AppSettingsService.Load();
 
         var asmVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-        string versionStr = asmVersion != null ? $"v{asmVersion.Major}.{asmVersion.Minor}.{asmVersion.Build}" : "v1.0.1";
+        string versionStr = asmVersion != null ? $"v{asmVersion.Major}.{asmVersion.Minor}.{asmVersion.Build}" : "v1.1.0";
         AppVersionText.Text = versionStr;
         Title = $"FastImageViewer {versionStr}";
 
@@ -94,6 +100,14 @@ public partial class MainWindow : Window
         OverviewLeftColumn.Width = new GridLength(Math.Clamp(_settings.OverviewLeftPaneWidth, 180, 600));
         OverviewPreviewRow.Height = new GridLength(Math.Clamp(_settings.OverviewPreviewPaneHeight, 100, 500));
 
+        int sortIdx = Math.Clamp((int)_settings.SortMode, 0, 4);
+        _isSyncingSortCombo = true;
+        FilmstripSortComboBox.SelectedIndex = sortIdx;
+        OverviewSortComboBox.SelectedIndex = sortIdx;
+        _isSyncingSortCombo = false;
+
+        UpdateFilmstripPinButtonUI();
+        ApplyFilmstripScale(_settings.FilmstripScalePercent, saveSetting: false);
         UpdateWheelModeButtonText();
         UpdateEditSaveModeButtonText();
         InitializeFolderTree();
@@ -149,46 +163,61 @@ public partial class MainWindow : Window
         AppSettingsService.Save(_settings);
 
         FolderPathText.Text = _currentFolder;
+        FilmstripFolderPathText.Text = $"📁 {_currentFolder}";
         if (syncTree)
         {
             SyncFolderTreeToPath(_currentFolder);
         }
 
         _cacheService.Clear();
-        _items.Clear();
-
-        List<string> files = ImageCacheService.GetImagesInFolder(_currentFolder);
-        int targetIndex = 0;
-
-        for (int i = 0; i < files.Count; i++)
+        _isSortingItems = true;
+        try
         {
-            _items.Add(new ImageItem(files[i]));
-            if (selectedFilePath != null && string.Equals(files[i], selectedFilePath, StringComparison.OrdinalIgnoreCase))
+            _items.Clear();
+
+            List<string> files = ImageCacheService.GetImagesInFolder(_currentFolder);
+            List<ImageItem> loadedItems = files.Select(f => new ImageItem(f)).ToList();
+            SortItemsList(loadedItems, _settings.SortMode);
+
+            int targetIndex = 0;
+            for (int i = 0; i < loadedItems.Count; i++)
             {
-                targetIndex = i;
+                _items.Add(loadedItems[i]);
+                if (selectedFilePath != null && string.Equals(loadedItems[i].FilePath, selectedFilePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    targetIndex = i;
+                }
             }
-        }
+            RefreshItemIndicesAndFolderSummary();
 
-        if (_items.Count == 0)
-        {
+            if (_items.Count == 0)
+            {
+                _currentIndex = -1;
+                FullscreenImage.Source = null;
+                OverviewPreviewImage.Source = null;
+                OverviewPreviewMetaText.Text = string.Empty;
+                TopFilmstripPanel.Visibility = Visibility.Collapsed;
+                EmptyStatePanel.Visibility = Visibility.Visible;
+                ThumbnailListBox.Visibility = Visibility.Collapsed;
+                UpdateFilmstripNavigationButtons();
+                UpdateStatusText();
+                SwitchMode(overviewMode: true, keepTreeFocus: keepTreeFocus);
+                return;
+            }
+
+            EmptyStatePanel.Visibility = Visibility.Collapsed;
+            ThumbnailListBox.Visibility = Visibility.Visible;
+
             _currentIndex = -1;
-            FullscreenImage.Source = null;
-            OverviewPreviewImage.Source = null;
-            OverviewPreviewMetaText.Text = string.Empty;
-            EmptyStatePanel.Visibility = Visibility.Visible;
-            ThumbnailListBox.Visibility = Visibility.Collapsed;
-            UpdateStatusText();
-            SwitchMode(overviewMode: true, keepTreeFocus: keepTreeFocus);
-            return;
+            SetCurrentIndex(targetIndex);
+            SwitchMode(overviewMode: !startInFullscreen, keepTreeFocus: keepTreeFocus);
+
+            _ = LoadThumbnailsOutwardAsync(targetIndex, _thumbnailCts.Token);
         }
-
-        EmptyStatePanel.Visibility = Visibility.Collapsed;
-        ThumbnailListBox.Visibility = Visibility.Visible;
-
-        SetCurrentIndex(targetIndex);
-        SwitchMode(overviewMode: !startInFullscreen, keepTreeFocus: keepTreeFocus);
-
-        _ = LoadThumbnailsOutwardAsync(targetIndex, _thumbnailCts.Token);
+        finally
+        {
+            _isSortingItems = false;
+        }
     }
 
     private async Task LoadThumbnailsOutwardAsync(int centerIndex, CancellationToken token)
@@ -238,6 +267,7 @@ public partial class MainWindow : Window
             FullscreenImage.Source = null;
             OverviewPreviewImage.Source = null;
             OverviewPreviewMetaText.Text = string.Empty;
+            UpdateFilmstripNavigationButtons();
             UpdateStatusText();
             return;
         }
@@ -249,6 +279,10 @@ public partial class MainWindow : Window
             {
                 ThumbnailListBox.SelectedIndex = _currentIndex;
             }
+            if (FilmstripListBox.SelectedIndex != _currentIndex)
+            {
+                FilmstripListBox.SelectedIndex = _currentIndex;
+            }
             return;
         }
 
@@ -259,6 +293,16 @@ public partial class MainWindow : Window
         if (ThumbnailListBox.SelectedIndex != _currentIndex)
         {
             ThumbnailListBox.SelectedIndex = _currentIndex;
+        }
+        if (FilmstripListBox.SelectedIndex != _currentIndex)
+        {
+            FilmstripListBox.SelectedIndex = _currentIndex;
+        }
+
+        UpdateFilmstripNavigationButtons();
+        if (TopFilmstripPanel.Visibility == Visibility.Visible)
+        {
+            ScrollFilmstripToCurrentItem();
         }
 
         UpdateStatusText();
@@ -303,6 +347,11 @@ public partial class MainWindow : Window
         FullscreenImage.Height = _imageBaseHeightDip;
         FullscreenImage.Source = bitmap;
         OverviewPreviewImage.Source = bitmap;
+
+        if (_currentIndex >= 0 && _currentIndex < _items.Count)
+        {
+            _items[_currentIndex].DimensionsText = $"{bitmap.PixelWidth}×{bitmap.PixelHeight}";
+        }
 
         EndMagnifierOrPan();
         ApplyFitToWindow();
@@ -479,10 +528,15 @@ public partial class MainWindow : Window
         if (_isCropMode || FullscreenImage.Source == null)
             return;
 
-        if (e.OriginalSource is DependencyObject dep && IsDescendantOf(dep, LeftFlyoutPanel))
+        if (e.OriginalSource is DependencyObject dep &&
+            (IsDescendantOf(dep, LeftFlyoutPanel) || IsDescendantOf(dep, TopFilmstripPanel)))
             return;
 
         LeftFlyoutPanel.Visibility = Visibility.Collapsed;
+        if (!_settings.PinTopFilmstrip)
+        {
+            TopFilmstripPanel.Visibility = Visibility.Collapsed;
+        }
 
         if (e.ClickCount == 2)
         {
@@ -526,8 +580,27 @@ public partial class MainWindow : Window
 
         if (!_isMagnifierActive && !_isPanning)
         {
+            // Show TopFilmstripPanel when mouse approaches the top edge of the screen (<= 14 px)
+            if (currentPos.Y <= 14)
+            {
+                if (TopFilmstripPanel.Visibility != Visibility.Visible)
+                {
+                    TopFilmstripPanel.Visibility = Visibility.Visible;
+                    ScrollFilmstripToCurrentItem();
+                }
+            }
+            else if (TopFilmstripPanel.Visibility == Visibility.Visible && !_settings.PinTopFilmstrip)
+            {
+                if (!TopFilmstripPanel.IsMouseOver &&
+                    !FilmstripSortComboBox.IsDropDownOpen &&
+                    currentPos.Y > TopFilmstripPanel.ActualHeight + 14)
+                {
+                    TopFilmstripPanel.Visibility = Visibility.Collapsed;
+                }
+            }
+
             // Show LeftFlyoutPanel when mouse approaches the left edge of the screen (<= 14 px)
-            if (currentPos.X <= 14)
+            if (currentPos.X <= 14 && (TopFilmstripPanel.Visibility != Visibility.Visible || currentPos.Y > TopFilmstripPanel.ActualHeight))
             {
                 if (LeftFlyoutPanel.Visibility != Visibility.Visible)
                 {
@@ -694,6 +767,346 @@ public partial class MainWindow : Window
     private void EditSaveModeButton_Click(object sender, RoutedEventArgs e)
     {
         ToggleEditSaveMode();
+    }
+
+    // ==================== TOP FILMSTRIP PANEL & SORTING HANDLERS ====================
+
+    private static int CompareItems(ImageItem a, ImageItem b, ImageSortMode mode)
+    {
+        int cmp = mode switch
+        {
+            ImageSortMode.NameDesc => NaturalStringComparer.Instance.Compare(b.FileName, a.FileName),
+            ImageSortMode.DateDesc => b.LastWriteTimeUtc.CompareTo(a.LastWriteTimeUtc),
+            ImageSortMode.DateAsc => a.LastWriteTimeUtc.CompareTo(b.LastWriteTimeUtc),
+            ImageSortMode.SizeDesc => b.FileSizeBytes.CompareTo(a.FileSizeBytes),
+            _ => NaturalStringComparer.Instance.Compare(a.FileName, b.FileName)
+        };
+        return cmp != 0 ? cmp : NaturalStringComparer.Instance.Compare(a.FileName, b.FileName);
+    }
+
+    private static void SortItemsList(List<ImageItem> list, ImageSortMode mode)
+    {
+        list.Sort((a, b) => CompareItems(a, b, mode));
+    }
+
+    private void RefreshItemIndicesAndFolderSummary()
+    {
+        long totalBytes = 0;
+        for (int i = 0; i < _items.Count; i++)
+        {
+            _items[i].DisplayIndex = i + 1;
+            totalBytes += _items[i].FileSizeBytes;
+        }
+        _totalFolderBytes = totalBytes;
+    }
+
+    private void SortComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isSyncingSortCombo || sender is not ComboBox cb || cb.SelectedIndex < 0)
+            return;
+
+        var newMode = (ImageSortMode)Math.Clamp(cb.SelectedIndex, 0, 4);
+
+        _isSyncingSortCombo = true;
+        try
+        {
+            if (FilmstripSortComboBox != null) FilmstripSortComboBox.SelectedIndex = (int)newMode;
+            if (OverviewSortComboBox != null) OverviewSortComboBox.SelectedIndex = (int)newMode;
+        }
+        finally
+        {
+            _isSyncingSortCombo = false;
+        }
+
+        ApplySortMode(newMode);
+
+        string label = newMode switch
+        {
+            ImageSortMode.NameDesc => "Řazení: Název Z–A",
+            ImageSortMode.DateDesc => "Řazení: Datum (Nejnovější první)",
+            ImageSortMode.DateAsc => "Řazení: Datum (Nejstarší první)",
+            ImageSortMode.SizeDesc => "Řazení: Velikost (Největší)",
+            _ => "Řazení: Název A–Z (Přirozené)"
+        };
+        ShowToast($"🔀 {label}");
+    }
+
+    private void ApplySortMode(ImageSortMode newMode)
+    {
+        _settings.SortMode = newMode;
+        AppSettingsService.Save(_settings);
+
+        if (_items.Count == 0)
+            return;
+
+        string? activePath = (_currentIndex >= 0 && _currentIndex < _items.Count)
+            ? _items[_currentIndex].FilePath
+            : null;
+
+        var sorted = _items.ToList();
+        SortItemsList(sorted, newMode);
+
+        _isSortingItems = true;
+        try
+        {
+            _items.Clear();
+            int newIndex = 0;
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                _items.Add(sorted[i]);
+                if (activePath != null && string.Equals(sorted[i].FilePath, activePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    newIndex = i;
+                }
+            }
+
+            RefreshItemIndicesAndFolderSummary();
+            _currentIndex = newIndex;
+            ThumbnailListBox.SelectedIndex = _currentIndex;
+            FilmstripListBox.SelectedIndex = _currentIndex;
+        }
+        finally
+        {
+            _isSortingItems = false;
+        }
+
+        UpdateFilmstripNavigationButtons();
+        UpdateStatusText();
+
+        if (TopFilmstripPanel.Visibility == Visibility.Visible)
+        {
+            ScrollFilmstripToCurrentItem(alignStart: _currentIndex == 0);
+        }
+
+        if (_isOverviewMode && _currentIndex >= 0 && _currentIndex < _items.Count)
+        {
+            ThumbnailListBox.ScrollIntoView(_items[_currentIndex]);
+        }
+
+        _thumbnailCts?.Cancel();
+        _thumbnailCts = new CancellationTokenSource();
+        _ = LoadThumbnailsOutwardAsync(Math.Max(0, _currentIndex), _thumbnailCts.Token);
+    }
+
+    private void UpdateFilmstripNavigationButtons()
+    {
+        bool hasItems = _items.Count > 0 && _currentIndex >= 0;
+        if (FilmstripFirstButton != null) FilmstripFirstButton.IsEnabled = hasItems && _currentIndex > 0;
+        if (FilmstripPrevButton != null) FilmstripPrevButton.IsEnabled = hasItems && _currentIndex > 0;
+        if (FilmstripNextButton != null) FilmstripNextButton.IsEnabled = hasItems && _currentIndex < _items.Count - 1;
+        if (FilmstripLastButton != null) FilmstripLastButton.IsEnabled = hasItems && _currentIndex < _items.Count - 1;
+        if (FilmstripCenterButton != null) FilmstripCenterButton.IsEnabled = hasItems;
+    }
+
+    private void UpdateFilmstripPinButtonUI()
+    {
+        if (FilmstripPinButton == null)
+            return;
+
+        if (_settings.PinTopFilmstrip)
+        {
+            FilmstripPinButton.Content = "📌 Připnuto";
+            FilmstripPinButton.Background = new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6));
+            FilmstripPinButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x60, 0xA5, 0xFA));
+            FilmstripPinButton.Foreground = Brushes.White;
+        }
+        else
+        {
+            FilmstripPinButton.Content = "📌 Připnout";
+            FilmstripPinButton.Background = new SolidColorBrush(Color.FromRgb(0x27, 0x29, 0x32));
+            FilmstripPinButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x38, 0x3C, 0x4A));
+            FilmstripPinButton.Foreground = new SolidColorBrush(Color.FromRgb(0xF3, 0xF4, 0xF6));
+        }
+    }
+
+    private void ApplyFilmstripScale(int percent, bool saveSetting = true)
+    {
+        int target = percent <= 0 ? 100 : percent;
+        int normalized = FilmstripScaleSteps
+            .OrderBy(step => Math.Abs(step - target))
+            .First();
+
+        _settings.FilmstripScalePercent = normalized;
+        if (saveSetting)
+        {
+            AppSettingsService.Save(_settings);
+        }
+
+        int stepIndex = Array.IndexOf(FilmstripScaleSteps, normalized);
+        if (stepIndex >= 0 && FilmstripSizeComboBox != null)
+        {
+            _isSyncingFilmstripSizeCombo = true;
+            try
+            {
+                FilmstripSizeComboBox.SelectedIndex = stepIndex;
+            }
+            finally
+            {
+                _isSyncingFilmstripSizeCombo = false;
+            }
+        }
+
+        if (Resources["FilmstripCardScaleTransform"] is ScaleTransform scaleTransform)
+        {
+            double factor = normalized / 100.0;
+            scaleTransform.ScaleX = factor;
+            scaleTransform.ScaleY = factor;
+        }
+
+        if (TopFilmstripPanel.Visibility == Visibility.Visible)
+        {
+            ScrollFilmstripToCurrentItem();
+        }
+    }
+
+    private void FilmstripSizeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isSyncingFilmstripSizeCombo || FilmstripSizeComboBox == null)
+            return;
+
+        int idx = FilmstripSizeComboBox.SelectedIndex;
+        if (idx < 0 || idx >= FilmstripScaleSteps.Length)
+            return;
+
+        int step = FilmstripScaleSteps[idx];
+        ApplyFilmstripScale(step, saveSetting: true);
+        ShowToast($"🔍 Velikost náhledů: {step} %");
+    }
+
+    private void ScrollFilmstripToCurrentItem(bool alignStart = false)
+    {
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (_currentIndex < 0 || _currentIndex >= _items.Count)
+                return;
+
+            ScrollViewer? sv = FindVisualChild<ScrollViewer>(FilmstripListBox);
+            if (sv != null && sv.ViewportWidth > 0)
+            {
+                double scale = Math.Clamp(_settings.FilmstripScalePercent, 75, 200) / 100.0;
+                double itemWidth = (168.0 * scale) + 8.0;
+                double targetOffset = alignStart
+                    ? 0.0
+                    : Math.Max(0.0, (_currentIndex * itemWidth) - (sv.ViewportWidth / 2.0) + (itemWidth / 2.0));
+                sv.ScrollToHorizontalOffset(targetOffset);
+            }
+            else
+            {
+                FilmstripListBox.ScrollIntoView(_items[_currentIndex]);
+            }
+        }), DispatcherPriority.Loaded);
+    }
+
+    private void TopFilmstripPanel_MouseLeave(object sender, MouseEventArgs e)
+    {
+        if (_settings.PinTopFilmstrip || FilmstripSortComboBox.IsDropDownOpen || FilmstripSizeComboBox.IsDropDownOpen)
+            return;
+
+        Point pos = e.GetPosition(FullscreenViewGrid);
+        if (pos.Y > TopFilmstripPanel.ActualHeight + 6 || !TopFilmstripPanel.IsMouseOver)
+        {
+            TopFilmstripPanel.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void TopFilmstripPanel_MouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        e.Handled = true;
+    }
+
+    private void FilmstripListBox_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        e.Handled = true;
+
+        if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            int currentIdx = Array.IndexOf(FilmstripScaleSteps, _settings.FilmstripScalePercent);
+            if (currentIdx < 0)
+            {
+                currentIdx = Array.IndexOf(FilmstripScaleSteps, 100);
+            }
+
+            int nextIdx = Math.Clamp(currentIdx + (e.Delta > 0 ? 1 : -1), 0, FilmstripScaleSteps.Length - 1);
+            if (nextIdx != currentIdx)
+            {
+                int newStep = FilmstripScaleSteps[nextIdx];
+                ApplyFilmstripScale(newStep, saveSetting: true);
+                ShowToast($"🔍 Velikost náhledů: {newStep} %");
+            }
+            return;
+        }
+
+        ScrollViewer? sv = FindVisualChild<ScrollViewer>(FilmstripListBox);
+        if (sv != null)
+        {
+            sv.ScrollToHorizontalOffset(sv.HorizontalOffset - (e.Delta * 1.25));
+        }
+    }
+
+    private void FilmstripListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isSortingItems)
+            return;
+
+        if (FilmstripListBox.SelectedIndex >= 0 && FilmstripListBox.SelectedIndex < _items.Count)
+        {
+            int newIdx = FilmstripListBox.SelectedIndex;
+            if (newIdx != _currentIndex)
+            {
+                SetCurrentIndex(newIdx);
+            }
+        }
+    }
+
+    private void FilmstripItem_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is ListBoxItem lbi && lbi.DataContext is ImageItem item && item.Thumbnail == null)
+        {
+            _ = _cacheService.EnsureThumbnailLoadedAsync(item);
+        }
+    }
+
+    private void FilmstripFirstButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_items.Count == 0)
+            return;
+
+        SetCurrentIndex(0);
+        ScrollFilmstripToCurrentItem(alignStart: true);
+        ShowToast("⏮ Skok na 1. fotku ve složce");
+    }
+
+    private void FilmstripLastButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_items.Count == 0)
+            return;
+
+        SetCurrentIndex(_items.Count - 1);
+        ScrollFilmstripToCurrentItem();
+        ShowToast($"⏭ Skok na poslední fotku (#{_items.Count})");
+    }
+
+    private void FilmstripCenterButton_Click(object sender, RoutedEventArgs e)
+    {
+        ScrollFilmstripToCurrentItem();
+    }
+
+    private void FilmstripPinButton_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.PinTopFilmstrip = !_settings.PinTopFilmstrip;
+        AppSettingsService.Save(_settings);
+        UpdateFilmstripPinButtonUI();
+
+        if (_settings.PinTopFilmstrip)
+        {
+            TopFilmstripPanel.Visibility = Visibility.Visible;
+            ScrollFilmstripToCurrentItem();
+            ShowToast("📌 Horní pás miniatur připnut");
+        }
+        else
+        {
+            ShowToast("📌 Horní pás miniatur uvolněn (auto-schování)");
+        }
     }
 
     // ==================== LEFT-EDGE FLYOUT PANEL HANDLERS ====================
@@ -957,6 +1370,7 @@ public partial class MainWindow : Window
 
         EndMagnifierOrPan();
         LeftFlyoutPanel.Visibility = Visibility.Collapsed;
+        TopFilmstripPanel.Visibility = Visibility.Collapsed;
         _isCropMode = true;
         _hasCropSelection = false;
         _cropDragAction = CropDragAction.None;
@@ -987,6 +1401,11 @@ public partial class MainWindow : Window
         CropSelectionContainer.Visibility = Visibility.Collapsed;
         CropSizeBadge.Visibility = Visibility.Collapsed;
         CropActionBar.Visibility = Visibility.Collapsed;
+
+        if (_settings.PinTopFilmstrip && !_isOverviewMode && _items.Count > 0)
+        {
+            TopFilmstripPanel.Visibility = Visibility.Visible;
+        }
     }
 
     private void ResetCropSelection()
@@ -1394,7 +1813,7 @@ public partial class MainWindow : Window
         int insertIndex = _items.Count;
         for (int i = 0; i < _items.Count; i++)
         {
-            if (NaturalStringComparer.Instance.Compare(newItem.FileName, _items[i].FileName) < 0)
+            if (CompareItems(newItem, _items[i], _settings.SortMode) < 0)
             {
                 insertIndex = i;
                 break;
@@ -1402,12 +1821,14 @@ public partial class MainWindow : Window
         }
 
         _items.Insert(insertIndex, newItem);
+        RefreshItemIndicesAndFolderSummary();
         if (insertIndex <= _currentIndex)
         {
             _currentIndex++;
         }
 
         _ = _cacheService.EnsureThumbnailLoadedAsync(newItem);
+        UpdateFilmstripNavigationButtons();
         UpdateStatusText();
     }
 
@@ -1512,6 +1933,7 @@ public partial class MainWindow : Window
 
         _cacheService.Invalidate(filePath);
         _items.RemoveAt(indexToDelete);
+        RefreshItemIndicesAndFolderSummary();
 
         if (_items.Count == 0)
         {
@@ -1519,8 +1941,10 @@ public partial class MainWindow : Window
             FullscreenImage.Source = null;
             OverviewPreviewImage.Source = null;
             OverviewPreviewMetaText.Text = string.Empty;
+            TopFilmstripPanel.Visibility = Visibility.Collapsed;
             EmptyStatePanel.Visibility = Visibility.Visible;
             ThumbnailListBox.Visibility = Visibility.Collapsed;
+            UpdateFilmstripNavigationButtons();
             UpdateStatusText();
             SwitchMode(overviewMode: true);
             return;
@@ -1579,6 +2003,7 @@ public partial class MainWindow : Window
 
         if (_isOverviewMode)
         {
+            TopFilmstripPanel.Visibility = Visibility.Collapsed;
             FullscreenViewGrid.Visibility = Visibility.Collapsed;
             OverviewGrid.Visibility = Visibility.Visible;
             OverviewGrid.UpdateLayout();
@@ -1621,6 +2046,17 @@ public partial class MainWindow : Window
             FullscreenViewGrid.Visibility = Visibility.Visible;
             FullscreenViewGrid.UpdateLayout();
             ApplyFitToWindow();
+
+            if (_settings.PinTopFilmstrip)
+            {
+                TopFilmstripPanel.Visibility = Visibility.Visible;
+                ScrollFilmstripToCurrentItem(alignStart: _currentIndex == 0);
+            }
+            else
+            {
+                TopFilmstripPanel.Visibility = Visibility.Collapsed;
+            }
+
             Focus();
         }
     }
@@ -1633,6 +2069,8 @@ public partial class MainWindow : Window
             FlyoutFileNameText.Text = "Žádný obrázek";
             FlyoutFileDetailsText.Text = "0 / 0";
             OverviewPreviewMetaText.Text = string.Empty;
+            FilmstripCounterText.Text = "0 / 0 fotek";
+            FilmstripResolutionText.Text = string.Empty;
             return;
         }
 
@@ -1662,12 +2100,21 @@ public partial class MainWindow : Window
             resolutionInfo = $"   •   {compactRes}";
         }
 
+        double totalMb = _totalFolderBytes / (1024.0 * 1024.0);
+        string totalSizeText = totalMb >= 1024.0
+            ? $"{totalMb / 1024.0:F2} GB"
+            : $"{totalMb:F1} MB";
+
         StatusCounterText.Text = $"{_currentIndex + 1} / {_items.Count}   —   {current.FileName}{resolutionInfo}{sizeInfo}";
         FlyoutFileNameText.Text = current.FileName;
         FlyoutFileDetailsText.Text = $"{_currentIndex + 1} / {_items.Count}"
             + (string.IsNullOrEmpty(compactRes) ? "" : $"  •  {compactRes}")
             + (string.IsNullOrEmpty(compactSize) ? "" : $"  •  {compactSize}");
         OverviewPreviewMetaText.Text = current.FileName
+            + (string.IsNullOrEmpty(compactRes) ? "" : $"  •  {compactRes}")
+            + (string.IsNullOrEmpty(compactSize) ? "" : $"  •  {compactSize}");
+        FilmstripCounterText.Text = $"{_currentIndex + 1} / {_items.Count} fotek • {totalSizeText}";
+        FilmstripResolutionText.Text = current.FileName
             + (string.IsNullOrEmpty(compactRes) ? "" : $"  •  {compactRes}")
             + (string.IsNullOrEmpty(compactSize) ? "" : $"  •  {compactSize}");
     }
@@ -1895,6 +2342,9 @@ public partial class MainWindow : Window
 
     private void ThumbnailListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (_isSortingItems)
+            return;
+
         if (ThumbnailListBox.SelectedIndex >= 0 && ThumbnailListBox.SelectedIndex < _items.Count)
         {
             int newIdx = ThumbnailListBox.SelectedIndex;
@@ -2092,6 +2542,25 @@ public partial class MainWindow : Window
             if (current is T match)
                 return match;
             current = VisualTreeHelper.GetParent(current);
+        }
+        return null;
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject? parent) where T : DependencyObject
+    {
+        if (parent == null)
+            return null;
+
+        int count = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T match)
+                return match;
+
+            T? result = FindVisualChild<T>(child);
+            if (result != null)
+                return result;
         }
         return null;
     }

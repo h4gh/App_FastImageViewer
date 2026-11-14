@@ -205,6 +205,309 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Dark ComboBox Style for Sort Selector -->
+        <Style x:Key="FilmstripComboBoxStyle" TargetType="ComboBox">
+            <Style.Resources>
+                <Style TargetType="ComboBoxItem">
+                    <Setter Property="Background" Value="#1E1E24" />
+                    <Setter Property="Foreground" Value="#F3F4F6" />
+                    <Setter Property="Padding" Value="10,6" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="Cursor" Value="Hand" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ComboBoxItem">
+                                <Border x:Name="ItemBorder"
+                                        Background="{TemplateBinding Background}"
+                                        Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsHighlighted" Value="True">
+                                        <Setter TargetName="ItemBorder" Property="Background" Value="#3B82F6" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="ItemBorder" Property="Background" Value="#2B3548" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Style.Resources>
+            <Setter Property="Foreground" Value="#F3F4F6" />
+            <Setter Property="Background" Value="#272932" />
+            <Setter Property="BorderBrush" Value="#383C4A" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="9,4" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton x:Name="ToggleButton"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          Background="{TemplateBinding Background}"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          Focusable="False"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          ClickMode="Press">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="Border"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="5">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="24" />
+                                                </Grid.ColumnDefinitions>
+                                                <Path Grid.Column="1"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      Data="M 0 0 L 4 4 L 8 0 Z"
+                                                      Fill="#9CA3AF" />
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Border" Property="BorderBrush" Value="#3B82F6" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+
+                            <ContentPresenter x:Name="ContentSite"
+                                              IsHitTestVisible="False"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              Margin="9,4,24,4"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Left" />
+
+                            <Popup x:Name="Popup"
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Slide">
+                                <Grid x:Name="DropDown"
+                                      SnapsToDevicePixels="True"
+                                      MinWidth="{TemplateBinding ActualWidth}"
+                                      MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <Border x:Name="DropDownBorder"
+                                            Background="#1E1E24"
+                                            BorderThickness="1"
+                                            BorderBrush="#3B82F6"
+                                            CornerRadius="5">
+                                        <ScrollViewer Margin="2" SnapsToDevicePixels="True">
+                                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Compact Action Button Style for Top Filmstrip Control Bar -->
+        <Style x:Key="FilmstripNavButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#272932" />
+            <Setter Property="Foreground" Value="#F3F4F6" />
+            <Setter Property="BorderBrush" Value="#383C4A" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="9,4" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#323644" />
+                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#4B5563" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#3B82F6" />
+                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#3B82F6" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Shared ScaleTransform for Top Filmstrip Cards (75% - 200%) -->
+        <ScaleTransform x:Key="FilmstripCardScaleTransform" ScaleX="1.0" ScaleY="1.0" />
+
+        <!-- Dark ScrollBar Styles (applies to FilmstripListBox, ThumbnailListBox, FolderTreeView) -->
+        <Style x:Key="DarkScrollBarPageButtonStyle" TargetType="RepeatButton">
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="Transparent" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DarkScrollBarThumbStyle" TargetType="Thumb">
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="ThumbBorder"
+                                CornerRadius="4"
+                                Background="#383C4A"
+                                Margin="2" />
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ThumbBorder" Property="Background" Value="#4F566B" />
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="ThumbBorder" Property="Background" Value="#3B82F6" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ScrollBar">
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="Width" Value="10" />
+            <Setter Property="MinWidth" Value="10" />
+            <Setter Property="Background" Value="#14151A" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="{TemplateBinding Background}">
+                            <Track x:Name="PART_Track"
+                                   Orientation="Vertical"
+                                   IsDirectionReversed="True"
+                                   Focusable="False">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource DarkScrollBarPageButtonStyle}"
+                                                  Command="ScrollBar.PageUpCommand" />
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource DarkScrollBarThumbStyle}"
+                                           MinHeight="24" />
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource DarkScrollBarPageButtonStyle}"
+                                                  Command="ScrollBar.PageDownCommand" />
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Width" Value="Auto" />
+                    <Setter Property="MinWidth" Value="0" />
+                    <Setter Property="Height" Value="10" />
+                    <Setter Property="MinHeight" Value="10" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ScrollBar">
+                                <Grid Background="{TemplateBinding Background}">
+                                    <Track x:Name="PART_Track"
+                                           Orientation="Horizontal"
+                                           IsDirectionReversed="False"
+                                           Focusable="False">
+                                        <Track.DecreaseRepeatButton>
+                                            <RepeatButton Style="{StaticResource DarkScrollBarPageButtonStyle}"
+                                                          Command="ScrollBar.PageLeftCommand" />
+                                        </Track.DecreaseRepeatButton>
+                                        <Track.Thumb>
+                                            <Thumb Style="{StaticResource DarkScrollBarThumbStyle}"
+                                                   MinWidth="28" />
+                                        </Track.Thumb>
+                                        <Track.IncreaseRepeatButton>
+                                            <RepeatButton Style="{StaticResource DarkScrollBarPageButtonStyle}"
+                                                          Command="ScrollBar.PageRightCommand" />
+                                        </Track.IncreaseRepeatButton>
+                                    </Track>
+                                </Grid>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Thumbnail Card Style for Top Filmstrip -->
+        <Style x:Key="FilmstripListBoxItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Margin" Value="4,2,4,6" />
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="Background" Value="#1F2026" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <EventSetter Event="Loaded" Handler="FilmstripItem_Loaded" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="CardBorder"
+                                Width="168"
+                                Height="148"
+                                LayoutTransform="{StaticResource FilmstripCardScaleTransform}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}"
+                                Cursor="Hand">
+                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="CardBorder" Property="Background" Value="#2A2D36" />
+                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="#4B5563" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="CardBorder" Property="Background" Value="#243047" />
+                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid>
@@ -556,6 +859,243 @@
                             Click="CloseButton_Click" />
                 </StackPanel>
             </Border>
+
+            <!-- ==================== TOP-EDGE AUTO-HIDE FILMSTRIP PANEL (FastStone style) ==================== -->
+            <Border x:Name="TopFilmstripPanel"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Stretch"
+                    Background="#F418181B"
+                    BorderBrush="#3B82F6"
+                    BorderThickness="0,0,0,1"
+                    Visibility="Collapsed"
+                    MouseLeave="TopFilmstripPanel_MouseLeave"
+                    MouseWheel="TopFilmstripPanel_MouseWheel">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Row 0: Top Control Bar -->
+                    <Border Grid.Row="0"
+                            Background="#1E1E24"
+                            BorderBrush="#2B2F3A"
+                            BorderThickness="0,0,0,1"
+                            Padding="12,6">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Left: Quick Jump Navigation -->
+                            <StackPanel Grid.Column="0"
+                                        Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <Button x:Name="FilmstripFirstButton"
+                                        Style="{StaticResource FilmstripNavButtonStyle}"
+                                        Content="⏮ První (Home)"
+                                        ToolTip="Skočit okamžitě na 1. fotku ve složce (Home)"
+                                        Background="#263B5E"
+                                        BorderBrush="#3B82F6"
+                                        Foreground="#93C5FD"
+                                        FontWeight="SemiBold"
+                                        Margin="0,0,6,0"
+                                        Click="FilmstripFirstButton_Click" />
+                                <Button x:Name="FilmstripPrevButton"
+                                        Style="{StaticResource FilmstripNavButtonStyle}"
+                                        Content="◀"
+                                        ToolTip="Předchozí fotka (←)"
+                                        Margin="0,0,4,0"
+                                        Click="FlyoutPrevButton_Click" />
+                                <Button x:Name="FilmstripNextButton"
+                                        Style="{StaticResource FilmstripNavButtonStyle}"
+                                        Content="▶"
+                                        ToolTip="Další fotka (→)"
+                                        Margin="0,0,6,0"
+                                        Click="FlyoutNextButton_Click" />
+                                <Button x:Name="FilmstripLastButton"
+                                        Style="{StaticResource FilmstripNavButtonStyle}"
+                                        Content="Poslední (End) ⏭"
+                                        ToolTip="Skočit na poslední fotku ve složce (End)"
+                                        Margin="0,0,6,0"
+                                        Click="FilmstripLastButton_Click" />
+                                <Button x:Name="FilmstripCenterButton"
+                                        Style="{StaticResource FilmstripNavButtonStyle}"
+                                        Content="🎯 Na aktivní"
+                                        ToolTip="Vycentrovat pás miniatur zpět na právě otevřenou fotku"
+                                        Click="FilmstripCenterButton_Click" />
+                            </StackPanel>
+
+                            <!-- Center: Folder & Counter Info -->
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Margin="12,0">
+                                <TextBlock x:Name="FilmstripFolderPathText"
+                                           Foreground="#D1D5DB"
+                                           FontSize="12"
+                                           MaxWidth="320"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                                <Border Background="#252B3B"
+                                        BorderBrush="#374151"
+                                        BorderThickness="1"
+                                        CornerRadius="10"
+                                        Padding="9,2"
+                                        Margin="10,0"
+                                        VerticalAlignment="Center">
+                                    <TextBlock x:Name="FilmstripCounterText"
+                                               Text="0 / 0 fotek"
+                                               Foreground="#60A5FA"
+                                               FontSize="11.5"
+                                               FontWeight="SemiBold" />
+                                </Border>
+                                <TextBlock x:Name="FilmstripResolutionText"
+                                           Foreground="#9CA3AF"
+                                           FontSize="11.5"
+                                           MaxWidth="260"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+
+                            <!-- Right: Thumbnail Scale, Sorting, Pin & Overview -->
+                            <StackPanel Grid.Column="2"
+                                        Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <ComboBox x:Name="FilmstripSizeComboBox"
+                                          Width="132"
+                                          Margin="0,0,8,0"
+                                          ToolTip="Nastavení velikosti náhledů a popisků v horním pásu (nebo Ctrl + kolečko myši)"
+                                          Style="{StaticResource FilmstripComboBoxStyle}"
+                                          Focusable="False"
+                                          SelectionChanged="FilmstripSizeComboBox_SelectionChanged">
+                                    <ComboBoxItem Content="Náhledy: 75 %" Tag="75" />
+                                    <ComboBoxItem Content="Náhledy: 90 %" Tag="90" />
+                                    <ComboBoxItem Content="Náhledy: 100 %" Tag="100" />
+                                    <ComboBoxItem Content="Náhledy: 115 %" Tag="115" />
+                                    <ComboBoxItem Content="Náhledy: 125 %" Tag="125" />
+                                    <ComboBoxItem Content="Náhledy: 150 %" Tag="150" />
+                                    <ComboBoxItem Content="Náhledy: 175 %" Tag="175" />
+                                    <ComboBoxItem Content="Náhledy: 200 %" Tag="200" />
+                                </ComboBox>
+                                <ComboBox x:Name="FilmstripSortComboBox"
+                                          Width="215"
+                                          Margin="0,0,8,0"
+                                          ToolTip="Rychlá změna řazení fotek podle Průzkumníku Windows"
+                                          Style="{StaticResource FilmstripComboBoxStyle}"
+                                          Focusable="False"
+                                          SelectionChanged="SortComboBox_SelectionChanged">
+                                    <ComboBoxItem Content="Řazení: Název A–Z (Přirozené)" />
+                                    <ComboBoxItem Content="Řazení: Název Z–A" />
+                                    <ComboBoxItem Content="Řazení: Datum (Nejnovější první)" />
+                                    <ComboBoxItem Content="Řazení: Datum (Nejstarší první)" />
+                                    <ComboBoxItem Content="Řazení: Velikost (Největší)" />
+                                </ComboBox>
+                                <Button x:Name="FilmstripPinButton"
+                                        Style="{StaticResource FilmstripNavButtonStyle}"
+                                        Content="📌 Připnout"
+                                        ToolTip="Připnout pás miniatur natrvalo nahoře, aby se sám neschovával"
+                                        Margin="0,0,8,0"
+                                        Click="FilmstripPinButton_Click" />
+                                <Button Style="{StaticResource FilmstripNavButtonStyle}"
+                                        Content="⊞ Přehled (Esc)"
+                                        ToolTip="Přepnout do třípanelového Přehledu (Enter / Esc)"
+                                        Click="FlyoutOverviewButton_Click" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Row 1: Horizontal Virtualized Thumbnail Strip -->
+                    <ListBox x:Name="FilmstripListBox"
+                             Grid.Row="1"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Padding="8,6,8,4"
+                             SelectionMode="Single"
+                             Focusable="False"
+                             ItemContainerStyle="{StaticResource FilmstripListBoxItemStyle}"
+                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                             ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                             ScrollViewer.CanContentScroll="True"
+                             VirtualizingPanel.IsVirtualizing="True"
+                             VirtualizingPanel.VirtualizationMode="Recycling"
+                             VirtualizingPanel.ScrollUnit="Pixel"
+                             PreviewMouseWheel="FilmstripListBox_PreviewMouseWheel"
+                             SelectionChanged="FilmstripListBox_SelectionChanged">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type models:ImageItem}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="18" />
+                                        <RowDefinition Height="21" />
+                                    </Grid.RowDefinitions>
+
+                                    <Border Grid.Row="0"
+                                            Background="#111216"
+                                            CornerRadius="4"
+                                            ClipToBounds="True">
+                                        <Grid>
+                                            <Image Source="{Binding Thumbnail}"
+                                                   Stretch="Uniform"
+                                                   StretchDirection="DownOnly"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                                            <Border Background="#CC0F172A"
+                                                    CornerRadius="3"
+                                                    Padding="5,1.5"
+                                                    Margin="4"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Top">
+                                                <TextBlock Text="{Binding IndexBadgeText}"
+                                                           Foreground="#60A5FA"
+                                                           FontSize="11"
+                                                           FontWeight="Bold"
+                                                           FontFamily="Consolas" />
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+
+                                    <Grid Grid.Row="1" Margin="1,2,1,0">
+                                        <TextBlock Text="{Binding DimensionsText}"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#9CA3AF"
+                                                   FontSize="10.5"
+                                                   FontFamily="Consolas" />
+                                        <TextBlock Text="{Binding ExtensionBadge}"
+                                                   HorizontalAlignment="Right"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#60A5FA"
+                                                   FontSize="10.5"
+                                                   FontFamily="Consolas"
+                                                   FontWeight="SemiBold" />
+                                    </Grid>
+
+                                    <TextBlock Grid.Row="2"
+                                               Text="{Binding FileName}"
+                                               Foreground="#E5E7EB"
+                                               FontSize="11.5"
+                                               Margin="1,1,1,0"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding FileName}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
         </Grid>
 
         <!-- ==================== 2. OVERVIEW (THUMBNAIL GRID) ==================== -->
@@ -583,6 +1123,7 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0"
@@ -602,7 +1143,7 @@
                                 Margin="8,0,0,0"
                                 VerticalAlignment="Center">
                             <TextBlock x:Name="AppVersionText"
-                                       Text="v1.0.1"
+                                       Text="v1.1.0"
                                        Foreground="#9CA3AF"
                                        FontSize="11"
                                        FontFamily="Consolas" />
@@ -616,7 +1157,22 @@
                                VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis" />
 
-                    <Button Grid.Column="2"
+                    <ComboBox x:Name="OverviewSortComboBox"
+                              Grid.Column="2"
+                              Width="205"
+                              Margin="10,0,0,0"
+                              VerticalAlignment="Center"
+                              ToolTip="Změnit řazení obrázků ve složce"
+                              Style="{StaticResource FilmstripComboBoxStyle}"
+                              SelectionChanged="SortComboBox_SelectionChanged">
+                        <ComboBoxItem Content="Řazení: Název A–Z (Přirozené)" />
+                        <ComboBoxItem Content="Řazení: Název Z–A" />
+                        <ComboBoxItem Content="Řazení: Datum (Nejnovější první)" />
+                        <ComboBoxItem Content="Řazení: Datum (Nejstarší první)" />
+                        <ComboBoxItem Content="Řazení: Velikost (Největší)" />
+                    </ComboBox>
+
+                    <Button Grid.Column="3"
                             Content="⚡ Dávková konverze (B)"
                             ToolTip="Dávková konverze a změna rozměrů obrázků (zkratka B nebo F3)"
                             Click="BatchConvertButton_Click"
@@ -625,12 +1181,12 @@
                             BorderThickness="0"
                             FontWeight="SemiBold"
                             Padding="12,5"
-                            Margin="12,0,0,0"
+                            Margin="10,0,0,0"
                             Cursor="Hand"
                             VerticalAlignment="Center" />
 
                     <Button x:Name="EditSaveModeButton"
-                            Grid.Column="3"
+                            Grid.Column="4"
                             Content="Ukládání: Auto sufix (U)"
                             ToolTip="Přepnout režim ukládání otočení a výřezů: Automaticky se sufixem (_rotated / _cropped) vs. Dialog Uložit jako… (zkratka U)"
                             Click="EditSaveModeButton_Click"
@@ -644,7 +1200,7 @@
                             VerticalAlignment="Center" />
 
                     <Button x:Name="WheelModeButton"
-                            Grid.Column="4"
+                            Grid.Column="5"
                             Content="Kolečko: Listování (M)"
                             ToolTip="Přepnout chování kolečka myši ve Fullscreenu: Listování mezi fotkami vs. Zoom (zkratka M; Ctrl+Kolečko vždy zoomuje)"
                             Click="WheelModeButton_Click"
@@ -657,7 +1213,7 @@
                             Cursor="Hand"
                             VerticalAlignment="Center" />
 
-                    <Button Grid.Column="5"
+                    <Button Grid.Column="6"
                             Content="Otevřít obrázek / složku (O)"
                             Click="OpenFileButton_Click"
                             Background="#2D2D30"
@@ -669,7 +1225,7 @@
                             Cursor="Hand"
                             VerticalAlignment="Center" />
 
-                    <Button Grid.Column="6"
+                    <Button Grid.Column="7"
                             Content="✕"
                             ToolTip="Ukončit (Esc)"
                             Click="CloseButton_Click"

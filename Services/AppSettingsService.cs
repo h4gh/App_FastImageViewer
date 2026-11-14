@@ -3,6 +3,15 @@ using System.Text.Json;
 
 namespace FastImageViewer.Services;
 
+public enum ImageSortMode
+{
+    NameAsc = 0,
+    NameDesc = 1,
+    DateDesc = 2,
+    DateAsc = 3,
+    SizeDesc = 4
+}
+
 public sealed class AppSettings
 {
     public string? LastFolderPath { get; set; }
@@ -13,6 +22,9 @@ public sealed class AppSettings
     public double OverviewLeftPaneWidth { get; set; } = 285;
     public double OverviewPreviewPaneHeight { get; set; } = 235;
     public string? LastRunVersion { get; set; }
+    public ImageSortMode SortMode { get; set; } = ImageSortMode.NameAsc;
+    public bool PinTopFilmstrip { get; set; } = false;
+    public int FilmstripScalePercent { get; set; } = 100;
 }
 
 public static class AppSettingsService

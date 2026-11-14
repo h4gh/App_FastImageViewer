@@ -19,6 +19,8 @@ Navržený s důrazem na **okamžitý start z Průzkumníku Windows**, čistý b
   * Po uvolnění tlačítka myši se obraz ihned vrátí zpět na celou obrazovku (*Fit to Window*).
 * **🎛️ Výsuvný ovládací panel ve Fullscreenu (styl FastStone / TeamViewer):**
   * Při najetí myší k **levému okraji obrazovky** vyjede přehledný ovládací panel se všemi funkcemi a informacemi o fotce. Po opuštění panelu myší se automaticky schová.
+* **🎞️ Horní výsuvný náhledový pás (Filmstrip) ve Fullscreenu:**
+  * Při najetí myší k **hornímu okraji obrazovky** vyjede virtuální pás miniatur aktuální složky s plynulým horizontálním posuvem kolečkem myši, tlačítky pro rychlý skok (`⏮ První`, `◀`, `▶`, `Poslední ⏭`, `🎯 Na aktivní`), přepínačem řazení (`Název A–Z`, `Z–A`, `Datum`, `Velikost`), možností trvalého připnutí (`📌 Připnout`) a nastavením velikosti karet i popisků (`75 %` – `200 %` nebo `Ctrl + kolečko myši`).
 * **🔄 Rotace a zrcadlení (`L`, `R`, `H`, `V`) s chytrým ukládáním:**
   * Otočení proběhne okamžitě v paměti. Při přechodu na další fotku, stisku `Esc` nebo `Enter` se zobrazí dialog, zda chcete fotku uložit jako novou (`originalname_rotated`, výchozí pod `Enter`), nebo přepsat originál (`P`).
 * **✂️ Interaktivní výstřižek / Crop (`X`):**
@@ -47,6 +49,7 @@ Navržený s důrazem na **okamžitý start z Průzkumníku Windows**, čistý b
 | **`Esc`** (v Overview) | Ukončení aplikace |
 | **Držení levého tlačítka myši** | **FastStone Lupa (100 % 1:1)** v místě kurzoru + posun tažením myši |
 | **Myš k levému okraji obrazovky** | Vysunutí bočního ovládacího panelu ve Fullscreenu |
+| **Myš k hornímu okraji obrazovky** | Vysunutí horního pásu miniatur (Filmstrip) ve Fullscreenu (`Kolečko` = posun pásu, `Ctrl + Kolečko` = velikost náhledů `75–200 %`) |
 | **`←` / `↑` / `PageUp` / `Backspace`** | Předchozí fotka |
 | **`→` / `↓` / `PageDown` / `Mezerník`** | Další fotka |
 | **`Home` / `End`** | První / poslední fotka ve složce |
